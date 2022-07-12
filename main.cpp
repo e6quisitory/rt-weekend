@@ -12,7 +12,7 @@ int main() {
   const int image_width = 960;
   const int image_height = 540;
 
-  const point3 origin  = point3(0,0,0);
+  const point3 origin = point3(0,0,0);
   const double screen_dist = 0.5*image_width;
   const double sphere_radius = 0.25*image_width; 
   const double sphere_screen_dist = sphere_radius;
