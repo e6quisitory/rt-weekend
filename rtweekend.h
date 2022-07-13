@@ -5,6 +5,12 @@
 #include <limits>
 #include <memory>
 #include <cstdlib>
+#include "vec3.h"
+#include "color.h"
+#include "ray.h"
+#include "hittable.h"
+#include "sphere.h"
+#include "camera.h"
 
 // Usings
 
@@ -32,10 +38,5 @@ inline double random_double(double min, double max) {
     // Returns a random real in [min,max).
     return min + (max-min)*random_double();
 }
-
-// Common Headers
-
-#include "ray.h"
-#include "vec3.h"
 
 #endif
