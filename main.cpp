@@ -13,7 +13,7 @@ int main() {
   hittable_list world;
   world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
   world.add(make_shared<sphere>(point3(0,-100.5,-1), 100));
-  const int samples_per_pixel = 10;
+  const int samples_per_pixel = 100;
 
   /* Setup PPM file */
   std::ofstream img;
@@ -23,14 +23,14 @@ int main() {
   /* Render image */
   hit_record rec;
   for (int i = image_height; i > 0; --i) { // must go from top to bottom as PPM file starts in top left corner, not bottom
-    std::cerr << "\rScanlines remaining: " << image_height - i << std::flush;
+    std::cerr << "\rScanlines remaining: " << i << ' ' << std::flush;
     for (int j = 0; j < image_width; ++j) {
       double sum = 0;
       for (int k = 0; k < samples_per_pixel; ++k) {
         double u = (j+random_double()) / image_width;
         double v = (i+random_double()) / image_height;
         ray r = cam.get_ray(u, v);
-        sum += world.hit(r, -50, 50, rec) ? 1.0 : 0;
+        sum += world.hit(r, 0, DBL_MAX, rec) ? 1.0 : 0;
       }
      write_color(img, color(sum/samples_per_pixel,0,0)); 
     }
