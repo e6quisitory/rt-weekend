@@ -14,3 +14,7 @@ Side note - some videos/people that have inspired me to delve into computer grap
   - The graphics quality of The Last of Us; the fact that it ran on 2006 hardware<br/>
   - Graphics quality of The Last of Us Part II<br/>
   - John Carmack<br/>
+
+## To do after finishing
+  - Implement multi-threading to speed up render times on CPU
+  - Make a scene viewer that dynamically renders, to avoid having to render one frame at a time as a PPM file.
