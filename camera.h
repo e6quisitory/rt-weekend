@@ -19,7 +19,7 @@ class camera {
 
     // u, v are real numbers b/w 0 and 1. Basically the width and height of the viewport represented as a percentage.
     ray get_ray(double u, double v) const {
-      return ray(origin, lower_left_corner + u*horizontal + v*vertical - origin);
+      return ray(origin, (lower_left_corner + u*horizontal + v*vertical) - origin);
     }
 
   public:

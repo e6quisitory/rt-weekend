@@ -18,18 +18,19 @@ class sphere : public hittable {
 
 bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
   // Hard-code quadratic solution for ray-sphere intersection
+  vec3 oc = r.origin()-center;
   double a = dot(r.direction(), r.direction());
-  double b = dot(2*r.direction(), r.origin()-center); // b will always be < 0 as the angle b/w dotted vectors always > 90 deg 
-  double c = dot(r.origin()-center, r.origin()-center) - radius*radius; 
+  double b = 2*dot(oc, r.direction()); // b will always be < 0 as the angle b/w dotted vectors always > 90 deg 
+  double c = dot(oc, oc) - radius*radius; 
   double discriminant = b*b - 4*a*c; 
 
   if (discriminant < 0) // no real solution
     return false;
   else {                // one or two solutions
-    double root = (-b - std::sqrt(discriminant))/2*a;  
+    double root = (-b - std::sqrt(discriminant))/2.0*a;  
 
     if (root < t_min || root > t_max) {
-      root = (-b + std::sqrt(discriminant))/2*a;
+      root = (-b + std::sqrt(discriminant))/2.0*a;
       if (root < t_min || root > t_max)
         return false;
     }
