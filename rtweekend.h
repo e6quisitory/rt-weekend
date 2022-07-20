@@ -5,19 +5,6 @@
 #include <limits>
 #include <memory>
 #include <cstdlib>
-#include "vec3.h"
-#include "color.h"
-#include "ray.h"
-#include "hittable.h"
-#include "hittable_list.h"
-#include "sphere.h"
-#include "camera.h"
-
-// Usings
-
-using std::shared_ptr;
-using std::make_shared;
-using std::sqrt;
 
 // Constants
 

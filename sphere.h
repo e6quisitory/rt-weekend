@@ -9,7 +9,7 @@ class sphere : public hittable {
     sphere() {}
     sphere(point3 c, double r): center(c), radius(r) {}
 
-    virtual bool hit(const ray &r, double t_min, double t_max, hit_record &rec) const override;
+    virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const override;
 
   public:
     point3 center;
@@ -17,29 +17,29 @@ class sphere : public hittable {
 };
 
 bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
-  // Hard-code quadratic solution for ray-sphere intersection
-  vec3 oc = r.origin()-center;
-  double a = dot(r.direction(), r.direction());
-  double b = 2*dot(oc, r.direction()); // b will always be < 0 as the angle b/w dotted vectors always > 90 deg 
-  double c = dot(oc, oc) - radius*radius; 
-  double discriminant = b*b - 4*a*c; 
+  vec3 ray_direction = r.direction();
+  vec3 origin_centre = r.origin() - center;
+  double a = ray_direction.length_squared();
+  double b = 2*dot(ray_direction, origin_centre);
+  double c = origin_centre.length_squared() - radius*radius;
 
-  if (discriminant < 0) // no real solution
-    return false;
-  else {                // one or two solutions
-    double root = (-b - std::sqrt(discriminant))/2.0*a;  
+  double discriminant = b*b - 4*a*c;
 
-    if (root < t_min || root > t_max) {
-      root = (-b + std::sqrt(discriminant))/2.0*a;
-      if (root < t_min || root > t_max)
-        return false;
-    }
-    rec.t = root;
-    rec.p = r.at(rec.t);
-    vec3 outward_normal = (rec.p - center)/radius;
-    rec.set_face_normal(r, outward_normal);
-    return true;
+  if (discriminant < 0) return false;
+
+  // check which root is within range
+  double t = (-b - std::sqrt(discriminant))/(2*a);
+  if (t < t_min || t > t_max) {               // if first root is out of range, check second root
+    t = (-b + std::sqrt(discriminant))/(2*a);
+    if (t < t_min || t > t_max) return false;
   }
+  // root in range has been found
+  rec.t = t;
+  rec.p = r.at(rec.t);
+  vec3 outward_normal = (rec.p - center)/radius;
+  rec.set_face_normal(r, outward_normal);
+
+  return true;
 }
 
 #endif

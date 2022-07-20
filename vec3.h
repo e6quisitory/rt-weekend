@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <cmath>
+#include "rtweekend.h"
 
 class vec3 {
   public:
@@ -65,6 +66,14 @@ class vec3 {
       return (length() == 1) ? true : false;
     }
 
+    inline static vec3 random() {
+      return vec3(random_double(), random_double(), random_double());
+    }
+
+    inline static vec3 random(double min, double max) {
+      return vec3(random_double(min, max), random_double(min, max), random_double(min, max));
+    }
+
   public:
     double e[3];
 };
@@ -120,6 +129,13 @@ inline vec3 cross(const vec3& v1, const vec3& v2) {
 
 inline vec3 unit_vector(const vec3& v) {
   return v / v.length();
+}
+
+point3 random_in_unit_sphere() {
+  while (true) {
+    point3 p = vec3::random(-1,1);
+    if (p.length_squared() < 1) return p;
+  }
 }
 
 #endif
