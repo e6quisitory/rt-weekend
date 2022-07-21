@@ -117,6 +117,14 @@ inline vec3 operator/(const vec3& v1, double t) {
   return vec3(v1.e[0]/t, v1.e[1]/t, v1.e[2]/t);
 }
 
+vec3 operator^(const vec3& v, double d) {
+  return vec3( pow(v.e[0], d), pow(v.e[1], d), pow(v.e[2], d) );
+}
+
+vec3 sqrt(const vec3& v) {
+  return vec3(std::sqrt(v.e[0]), std::sqrt(v.e[1]), std::sqrt(v.e[2]));
+}
+
 inline double dot(const vec3& v1, const vec3& v2) {
   return v1.e[0]*v2.e[0] + v1.e[1]*v2.e[1] + v1.e[2]*v2.e[2];
 }

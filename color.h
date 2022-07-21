@@ -4,6 +4,7 @@
 #define MAX_COLOR 255
 
 #include <iostream>
+#include <cmath>
 #include "vec3.h"
 
 void write_color(std::ofstream& out, color pixel_color) {

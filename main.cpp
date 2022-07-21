@@ -20,38 +20,40 @@ color ray_color(const ray& r, const hittable& world, int depth) {
     point3 target = rec.p + rec.normal + random_in_unit_sphere();
     ray bounce = ray(rec.p, target - rec.p);
     return 0.5*ray_color(bounce, world, depth-1);
-  } else return color(1,1,1);
+  }
+  return color(1,1,1);
 }
 
 int main() {
 
   /* Setup image and objects */
   camera cam;
-  const int image_width = 1920;
+  const int image_width = 1280;
   const int image_height = image_width / cam.aspect_ratio; // image & viewport have same aspect ratio
   hittable_list world;
   world.add(std::make_shared<sphere>(point3(0,0,-1), 0.5));
   world.add(std::make_shared<sphere>(point3(0,-100.5,-1), 100));
   const int samples_per_pixel = 100;
+  const int bounce_depth;
 
   /* Setup PPM file */
   std::ofstream img;
-  img.open("render.ppm");
+  img.open("render3.ppm");
   img << "P3\n" << image_width << ' ' << image_height << "\n255\n"; 
 
   /* Render image */
   hit_record rec;
   for (int i = image_height; i > 0; --i) { // must go from top to bottom as PPM file starts in top left corner, not bottom
-    std::cerr << "\rScanlines remaining: " << i << ' ' << std::flush;
+    std::cerr << "\rScanlines remaining: " << i-1 << ' ' << std::flush;
     for (int j = 0; j < image_width; ++j) {
       color sum(0,0,0);
       for (int k = 0; k < samples_per_pixel; ++k) {
         double u = (j+random_double()) / image_width;
         double v = (i+random_double()) / image_height;
         ray r = cam.get_ray(u, v);
-        sum += ray_color(r, world, 50);
+        sum += ray_color(r, world, bounce_depth);
       }
-     write_color(img, sum/samples_per_pixel); 
+     write_color(img, sqrt((sum/samples_per_pixel))); // sqrt for gamma correction
     }
   }
 
