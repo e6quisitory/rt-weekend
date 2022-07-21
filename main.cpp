@@ -16,7 +16,7 @@ color ray_color(const ray& r, const hittable& world, int depth) {
     return color(0,0,0);
 
   hit_record rec;
-  if (world.hit(r, 0, DBL_MAX, rec)) {
+  if (world.hit(r, 0.001, DBL_MAX, rec)) {
     point3 target = rec.p + rec.normal + random_in_unit_sphere();
     ray bounce = ray(rec.p, target - rec.p);
     return 0.5*ray_color(bounce, world, depth-1);
@@ -34,7 +34,7 @@ int main() {
   world.add(std::make_shared<sphere>(point3(0,0,-1), 0.5));
   world.add(std::make_shared<sphere>(point3(0,-100.5,-1), 100));
   const int samples_per_pixel = 100;
-  const int bounce_depth;
+  const int bounce_depth = 50;
 
   /* Setup PPM file */
   std::ofstream img;
