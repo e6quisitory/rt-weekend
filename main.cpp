@@ -42,9 +42,10 @@ int main() {
   img << "P3\n" << image_width << ' ' << image_height << "\n255\n"; 
 
   /* Render image */
+  auto start_time = std::chrono::high_resolution_clock::now();
   hit_record rec;
   for (int i = image_height; i > 0; --i) { // must go from top to bottom as PPM file starts in top left corner, not bottom
-    std::cerr << "\rScanlines remaining: " << i-1 << ' ' << std::flush;
+    std::cout << "\rScanlines remaining: " << i-1 << ' ' << std::flush;
     for (int j = 0; j < image_width; ++j) {
       color sum(0,0,0);
       for (int k = 0; k < samples_per_pixel; ++k) {
@@ -57,6 +58,9 @@ int main() {
     }
   }
 
+  print_render_time(Time::now() - start_time, std::cout, 3);
+
   img.close();
   return 0;
+
 }
