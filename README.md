@@ -18,3 +18,8 @@ Side note - some videos/people that have inspired me to delve into computer grap
 ## To do after finishing
   - Implement multi-threading to speed up render times on CPU
   - Make a scene viewer that dynamically renders, to avoid having to render one frame at a time as a PPM file.
+
+## Further reading
+  - https://developer.nvidia.com/blog/accelerated-ray-tracing-cuda/
+  - [Ray Tracing: The Next Week](https://raytracing.github.io/books/RayTracingTheNextWeek.html)
+  - [Ray Tracing: The Rest of Your Life](https://raytracing.github.io/books/RayTracingTheRestOfYourLife.html)
