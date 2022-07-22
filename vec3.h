@@ -8,6 +8,7 @@
 class vec3 {
   public:
     vec3(double a, double b, double c): e{a,b,c} {}
+    vec3(double d): e{d,d,d} {}
     vec3(): e{0,0,0} {} // initialize components to 0 if nothing passed in
 
     double x() { return e[0]; };

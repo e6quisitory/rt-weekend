@@ -10,16 +10,18 @@
 #include "hittable_list.h"
 #include "sphere.h"
 #include "camera.h"
+#include "matte.h"
 
 color ray_color(const ray& r, const hittable& world, int depth) {
   if (depth <= 0)
     return color(0,0,0);
 
   hit_record rec;
+  ray reflected_ray;
+
   if (world.hit(r, 0.001, DBL_MAX, rec)) {
-    point3 target = rec.p + rec.normal + random_in_unit_sphere();
-    ray bounce = ray(rec.p, target - rec.p);
-    return 0.5*ray_color(bounce, world, depth-1);
+    reflected_ray = rec.material_ptr->scatter(r, rec); 
+    return rec.material_ptr->get_albedo() * ray_color(reflected_ray, world, depth-1);
   }
   return color(1,1,1);
 }
@@ -31,18 +33,22 @@ int main() {
   const int image_width = 1280;
   const int image_height = image_width / cam.aspect_ratio; // image & viewport have same aspect ratio
   hittable_list world;
-  world.add(std::make_shared<sphere>(point3(0,0,-1), 0.5));
-  world.add(std::make_shared<sphere>(point3(0,-100.5,-1), 100));
+
+  auto matte_material = std::make_shared<matte>(color(0.5));
+
+  world.add(std::make_shared<sphere>(point3(0,0,-1), 0.5, matte_material));
+  world.add(std::make_shared<sphere>(point3(0,-100.5,-1), 100, matte_material));
+  
   const int samples_per_pixel = 100;
   const int bounce_depth = 50;
 
   /* Setup PPM file */
   std::ofstream img;
-  img.open("render3.ppm");
+  img.open("render.ppm");
   img << "P3\n" << image_width << ' ' << image_height << "\n255\n"; 
 
   /* Render image */
-  auto start_time = std::chrono::high_resolution_clock::now();
+  auto start_time = Time::now();
   hit_record rec;
   for (int i = image_height; i > 0; --i) { // must go from top to bottom as PPM file starts in top left corner, not bottom
     std::cout << "\rScanlines remaining: " << i-1 << ' ' << std::flush;
