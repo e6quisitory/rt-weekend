@@ -147,4 +147,8 @@ point3 random_in_unit_sphere() {
   }
 }
 
+vec3 reflect(const vec3& v_in, const vec3& n) {
+  return v_in - 2*dot(v_in, n)*n;
+}
+
 #endif

@@ -8,18 +8,18 @@
 
 class metal : public material {
   public:
-    metal(color a): albedo(a) {}
+    metal(color a, double f): albedo(a), fuzz(f <= 1 ? f : 1) {}
     virtual ray scatter(const ray& r_in, const hit_record& rec) const override;
     virtual color get_albedo() const override;
 
   public:
     color albedo;
+    double fuzz;
 };
 
 ray metal::scatter(const ray& r_in, const hit_record& rec) const {
-  vec3 idirection = r_in.direction();
-  vec3 normal = rec.normal;
-  return ray(rec.p, idirection - 2*(normal*dot(idirection, normal)));
+  vec3 reflected = reflect(r_in.direction(), rec.normal);
+  return ray(rec.p, reflected + fuzz*random_in_unit_sphere());
 }
 
 color metal::get_albedo() const {
