@@ -33,7 +33,7 @@ ray dielectric::scatter(const ray& r_in, const hit_record& rec) const {
    double theta1 = angle_bw(-r_in.direction(), rec.normal);
    double theta2 = std::asin((n1/n2)*std::sin(theta1));
 
-   if (rec.is_front_face && reflectance(n1, n2, theta1) > 0.2) // play around with this number
+   if (rec.is_front_face && reflectance(n1, n2, theta1) > 0.3) // play around with this number
     return ray(rec.p, reflect(r_in.direction(), rec.normal));
 
     vec3 tangent = unit_vector(r_in.direction() + r_in.direction().length()*std::cos(theta1)*rec.normal);

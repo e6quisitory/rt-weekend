@@ -5,11 +5,13 @@
 
 class camera {
   public:
-    camera() {
-      aspect_ratio = 16.0 / 9.0;
-      double viewport_height = 2.0;
-      double viewport_width = aspect_ratio * viewport_height; // ~3.56
+    camera(double aspr, double y_fov) {
+      aspect_ratio = aspr;
       focal_length = 1.0;
+      
+      double h = std::tan(degrees_to_radians(y_fov/2.0))*focal_length;
+      double viewport_height = 2.0*h;
+      double viewport_width = aspect_ratio * viewport_height;
 
       origin = point3(0,0,0);
       horizontal = vec3(viewport_width, 0, 0);

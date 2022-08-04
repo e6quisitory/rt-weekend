@@ -32,20 +32,23 @@ color ray_color(const ray& r, const hittable& world, int depth) {
 int main() {
 
   /* Setup image and objects */
-  camera cam;
+  camera cam(16.0/9.0, 50.0);
   const int image_width = 200;
   const int image_height = image_width / cam.aspect_ratio; // image & viewport have same aspect ratio
   hittable_list world;
 
   auto material_ground = std::make_shared<matte>(color(0.8, 0.8, 0.0));
-  auto material_center = std::make_shared<dielectric>(1.5);
-  auto material_left   = std::make_shared<metal>(color(0.8, 0.8, 0.8), 0);
-  auto material_right  = std::make_shared<metal>(color(0.8, 0.6, 0.2), 0);
+  auto material_center = std::make_shared<matte>(color(0.4));
+  auto material_left   = std::make_shared<metal>(color(0.8, 0.8, 0.8), 0.7);
+  auto material_right  = std::make_shared<metal>(color(0.8, 0.6, 0.2), 0.5);
+  auto material_dielectric = std::make_shared<dielectric>(1.42);
 
-  world.add(std::make_shared<sphere>(point3( 0.0, -100.5, -1.0), 100.0, material_ground));
-  world.add(std::make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.45, material_center));
-  world.add(std::make_shared<sphere>(point3(-1.0,    0.0, -1.0),   0.5, material_left));
-  world.add(std::make_shared<sphere>(point3( 1.0,    0.0, -1.0),   0.5, material_right));
+  auto l = std::cos(3.14159/4);
+
+  world.add(std::make_shared<sphere>(point3( 0.0, -100.5*l, -1.0), 100.0*l, material_ground));
+  world.add(std::make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.45*l, material_center));
+  world.add(std::make_shared<sphere>(point3(-l,    0.0, -1.0),   0.5*l, material_left));
+  world.add(std::make_shared<sphere>(point3( l,    0.0, -1.0),   0.5*l, material_right));
 
   const int samples_per_pixel = 100;
   const int bounce_depth = 50;
