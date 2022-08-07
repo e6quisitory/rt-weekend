@@ -155,4 +155,17 @@ inline double angle_bw(const vec3& v1, const vec3& v2) {
   return std::acos( dot(v1, v2) / (v1.length() * v2.length()) );
 }
 
+inline vec3 x_hat() {
+  return vec3(1,0,0);
+}
+
+inline vec3 y_hat() {
+  return vec3(0,1,0);
+}
+
+inline vec3 z_hat() {
+  return vec3(0,0,1);
+}
+
+
 #endif
