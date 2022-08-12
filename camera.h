@@ -2,29 +2,30 @@
 #define CAMERA_H
 
 #include "rtweekend.h"
+#include "vec3.h"
 
 class camera {
   public:
-    camera(point3 eye, double x_ang, double y_ang, double aspr, double y_fov) {
-      x_ang = degrees_to_radians(x_ang);
-      y_ang = degrees_to_radians(y_ang);
-      y_fov = degrees_to_radians(y_fov);
-
+    camera(point3 lookfrom, point3 lookat, vec3 vup, double aspr, double y_fov) {
+      /* Set public vars */
       aspect_ratio = aspr;
       focal_length = 1.0;
       
+      /* Use vertical FOV to set viewport dimensions */
       double h = std::tan(y_fov/2.0)*focal_length;
       double viewport_height = 2.0*h;
       double viewport_width = aspect_ratio * viewport_height;
 
-      vec3 flat = -z_hat()*std::cos(x_ang) + x_hat()*std::sin(x_ang);
-      vec3 view_dir = flat*std::cos(y_ang) + y_hat()*std::sin(y_ang);
+      /* Camera basis vectors */
+      vec3 view_dir = unit_vector(lookat - lookfrom);
+      vec3 x = unit_vector(cross(view_dir, vup));
+      vec3 y = cross(-x, -view_dir);
 
-      vertical = viewport_height*(y_hat()*std::cos(y_ang) - flat*std::sin(y_ang));
-      horizontal = viewport_width*(x_hat()*std::cos(x_ang) + z_hat()*std::sin(x_ang));
-
-      origin = eye;
-      lower_left_corner = origin + focal_length*view_dir - horizontal/2 - vertical/2;
+      /* Set image plane vars */
+      origin = lookfrom;
+      horizontal = x * viewport_width;
+      vertical = y * viewport_height;
+      lower_left_corner = origin + focal_length * view_dir - horizontal/2 - vertical/2;
     }
 
     // u, v are real numbers b/w 0 and 1. Width and height of the viewport represented as a percentage.

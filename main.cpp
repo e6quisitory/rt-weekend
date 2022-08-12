@@ -32,8 +32,8 @@ color ray_color(const ray& r, const hittable& world, int depth) {
 int main() {
 
   /* Setup image and objects */
-  camera cam(point3(-1,1,0), 45, -45, 16.0/9.0, 90);
-  const int image_width = 400;
+  camera cam(point3(-1,1,0), point3(0,0,-1), vec3(0,1,0), 16.0/9.0, 90);
+  const int image_width = 1280;
   const int image_height = image_width / cam.aspect_ratio; // image & viewport have same aspect ratio
   hittable_list world;
 
