@@ -16,8 +16,11 @@ Side note - some videos/people that have inspired me to delve into computer grap
   - John Carmack<br/>
 
 ## To do after finishing
+  - Add video rendering functionality (to show off focussing on different objects, for example).
   - Implement multi-threading to speed up render times on CPU
-  - Make a scene viewer that dynamically renders, to avoid having to render one frame at a time as a PPM file.
+  - Implement graphics acceleration through Metal or DirectX
+  - Make a scene viewer that dynamically renders, to avoid having to render one frame at a time as a PPM file
+  - Add ability to animate objects in the scene/world
 
 ## Further reading
   - https://developer.nvidia.com/blog/accelerated-ray-tracing-cuda/

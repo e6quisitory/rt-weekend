@@ -14,10 +14,10 @@
 #include "dielectric.h"
 #include "metal.h"
 
-// takes in a ray and a list of hittable objects and returns color of the object that was hit
+/* Takes in a ray and a list of hittable objects and returns color of the object that was hit */
 color ray_color(const ray& r, const hittable& world, int depth) {
-  if (depth <= 0)
-    return color(0,0,0);
+  /* If bounce depth has been reached, return black color */
+  if (depth <= 0) return color(0,0,0);
 
   hit_record rec;
   ray reflected_ray;
@@ -31,36 +31,40 @@ color ray_color(const ray& r, const hittable& world, int depth) {
 
 int main() {
 
-  /* Setup image and objects */
-  camera cam(point3(-1,1,0), point3(0,0,-1), vec3(0,1,0), 16.0/9.0, 90);
-  const int image_width = 1280;
-  const int image_height = image_width / cam.aspect_ratio; // image & viewport have same aspect ratio
-  hittable_list world;
+  /* Camera setup */
+  point3 lookfrom = point3(1.2, 0, -0.1);
+  point3 lookat = point3(0,0,-1);
+  point3 focusat = point3(-std::cos(3.14159/4), 0.0, -1.0);
+  vec3 vup = vec3(0,1,0);
+  camera cam(lookfrom, lookat, focusat, vup, 16.0/9.0, 70, 0.35);
 
+  /* Materials specifications */
   auto material_ground = std::make_shared<matte>(color(0.8, 0.8, 0.0));
   auto material_center = std::make_shared<matte>(color(0.4));
   auto material_left   = std::make_shared<metal>(color(0.8, 0.8, 0.8), 0.7);
   auto material_right  = std::make_shared<metal>(color(0.8, 0.6, 0.2), 0.5);
-  auto material_dielectric = std::make_shared<dielectric>(1.42);
 
+  /* Create world and add shaded objects */
+  hittable_list world;
   auto l = std::cos(3.14159/4);
-
   world.add(std::make_shared<sphere>(point3( 0.0, -100.5*l, -1.0), 100.0*l, material_ground));
   world.add(std::make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.45*l, material_center));
   world.add(std::make_shared<sphere>(point3(-l,    0.0, -1.0),   0.5*l, material_left));
   world.add(std::make_shared<sphere>(point3( l,    0.0, -1.0),   0.5*l, material_right));
 
-  const int samples_per_pixel = 100;
-  const int bounce_depth = 50;
-
   /* Setup PPM file */
+  const int image_width = 500;
+  const int image_height = image_width / cam.aspect_ratio; // image & viewport have same aspect ratio
   std::ofstream img;
   img.open("render.ppm");
   img << "P3\n" << image_width << ' ' << image_height << "\n255\n"; 
 
   /* Render image */
+  const int samples_per_pixel = 500;
+  const int bounce_depth = 50;
+
   auto start_time = Time::now();
-  hit_record rec;
+ 
   for (int i = image_height; i > 0; --i) { // must go from top to bottom as PPM file starts in top left corner, not bottom
     std::cout << "\rScanlines remaining: " << i-1 << ' ' << std::flush;
     for (int j = 0; j < image_width; ++j) {
