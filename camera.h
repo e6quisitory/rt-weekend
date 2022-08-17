@@ -6,6 +6,7 @@
 
 class camera {
   public:
+    camera() {}
     camera(point3 lookfrom, point3 lookat, point3 focusat, vec3 vup, double aspr, double y_fov, double aperature) {
 
       /* Set public vars */
