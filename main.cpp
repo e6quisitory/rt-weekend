@@ -20,19 +20,24 @@ struct renderer_params {
   camera cam;
   int image_width;
   int image_height;
+  int samples_per_pixel;
   int bounce_depth;
 };
 
-// tell this function with pixel you're on and it'll deal with sending the rays and give you back the final averaged pixel color
-void calculate_avg_color (int i, int j, int samples_per_pixel, const renderer_params& rp, color& final_color) {
-  color sum = color(0,0,0);
-  for (int k = 0; k < samples_per_pixel; ++k) {
-    double u = (j+random_double()) / rp.image_width;
-    double v = (i+random_double()) / rp.image_height;
-    ray r = rp.cam.get_ray(u, v);
-    sum += ray_color(r, rp.world, rp.bounce_depth);
+/* Takes in params struct and renders entire image into provided pixels array */
+void render_image(const renderer_params& rp, pixel* image) {
+  for (int i = rp.image_height; i > 0; --i) {
+    for (int j = 0; j < rp.image_width; ++j) {
+      color sum;
+      for (int k = 0; k < rp.samples_per_pixel; ++k) {
+          double u = (j+random_double()) / rp.image_width;
+          double v = (i+random_double()) / rp.image_height;
+          ray r = rp.cam.get_ray(u, v);
+          sum += ray_color(r, rp.world, rp.bounce_depth);
+      }
+      image[(rp.image_height-i)*rp.image_width + j] = sqrt(sum/rp.samples_per_pixel);  // sqrt for gamma correction
+    }
   }
-  final_color = sqrt(sum/samples_per_pixel);   // sqrt for gamma correction
 }
 
 int main() {
@@ -69,38 +74,44 @@ int main() {
   img << "P3\n" << rp.image_width << ' ' << rp.image_height << "\n255\n"; 
 
   /* Render image */
-  const int samples_per_pixel = 100;
-  rp.bounce_depth = 50;
   const auto core_count = std::thread::hardware_concurrency();
+  rp.samples_per_pixel = 100/core_count;
+  rp.bounce_depth = 50;
 
   auto start_time = Time::now();
  
-  for (int i = rp.image_height; i > 0; --i) { // must go from top to bottom as PPM file starts in top left corner, not bottom
-    std::cout << "\rScanlines remaining: " << i-1 << ' ' << std::flush;
-    for (int j = 0; j < rp.image_width; ++j) {
+  // create an array of images (pixel arrays), one for each CPU core
+  pixel* images[core_count];
 
-      color pixels[core_count];
-      std::thread threads[core_count-1];
+  // create an array of threads
+  std::thread threads[core_count-1];
 
-      for (int c = 0; c < core_count; ++c)
-        pixels[c] = color(0,0,0);
+  // initialize images (set the size of the arrays)
+  for (int i = 0; i < core_count; ++i)
+    images[i] = new pixel[rp.image_height*rp.image_width];
 
-      calculate_avg_color(i, j, samples_per_pixel/core_count, rp, pixels[core_count-1]);
+  // launch core_count-1 threads for image rendering
+  for (int i = 0; i < core_count-1; ++i)
+    threads[i] = std::thread(render_image, std::cref(rp), images[i]);
 
-      for (int c = 0; c < core_count-1; ++c)
-        threads[c] = std::thread(calculate_avg_color, i, j, samples_per_pixel/core_count, std::cref(rp), std::ref(pixels[c]));
+  // render image on this thread
+  render_image(rp, images[core_count-1]);
 
-      for (int c = 0; c < core_count-1; ++c)
-        threads[c].join();
+  // join launched threads
+  for (int i = 0; i < core_count-1; ++i)
+    threads[i].join();
 
-      color final_sum = color(0,0,0);
-      for (int c = 0; c < core_count; ++c) 
-        final_sum += pixels[c];
-
-      write_color(img, final_sum/core_count);
-    
-    }
+  // average all the images
+  for (int i = 0; i < rp.image_height*rp.image_width; ++i) {
+    color sum;
+    for (int j = 0; j < core_count; ++j)
+      sum += images[j][i];
+    write_color(img, sum/core_count);
   }
+
+  // delete pixel arrays (images) out of memory
+  for (int i = 0; i < core_count; ++i)
+    delete images[i];
 
   print_render_time(Time::now() - start_time, std::cout, 3);
 

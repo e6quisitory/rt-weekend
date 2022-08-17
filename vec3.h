@@ -82,6 +82,7 @@ class vec3 {
 // aliases - same data structure as vec3, just different names
 using point3 = vec3; // 3D point
 using color = vec3;  // RGB color
+using pixel = vec3;
 
 
 // vec3 utility functions, i.e. concerned with operations b/w vec3 objects, and not with modifying/reading an individual object itself.
