@@ -1,18 +1,4 @@
-#include <iostream>
-#include <fstream>
-#include <float.h>
-#include <memory>
-#include "rtweekend.h"
-#include "vec3.h"
-#include "color.h"
-#include "ray.h"
-#include "hittable.h"
-#include "hittable_list.h"
-#include "sphere.h"
-#include "camera.h"
-#include "matte.h"
-#include "dielectric.h"
-#include "metal.h"
+#include "includes.h"
 
 /* Takes in a ray and a list of hittable objects and returns color of the object that was hit */
 color ray_color(const ray& r, const hittable& world, int depth) {
@@ -60,7 +46,7 @@ int main() {
   img << "P3\n" << image_width << ' ' << image_height << "\n255\n"; 
 
   /* Render image */
-  const int samples_per_pixel = 500;
+  const int samples_per_pixel = 100;
   const int bounce_depth = 50;
 
   auto start_time = Time::now();
