@@ -1,6 +1,12 @@
 #ifndef MATTE_H
 #define MATTE_H
 
+#include "material.h"
+#include "ray.h"
+#include "vec3.h"
+#include "hittable.h"
+#include "rtweekend.h"
+
 class matte : public material {
   public:
     matte(color a) { albedo = a; }

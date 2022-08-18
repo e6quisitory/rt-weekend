@@ -1,11 +1,26 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
+#include <thread>
+#include <cmath>
+#include <iostream>
+#include <fstream>
+#include <limits>
+#include <float.h>
+
+#include "camera.h"
+#include "color.h"
+#include "hittable.h"
+#include "material.h"
+#include "hittable_list.h"
+#include "rtweekend.h"
+
 class renderer {
   public:
   	renderer() {}
 
   	void render_to_file(const std::string filename);
+    void render_shifting_focus(point3 startpoint, point3 endpoint, int seconds, int fps);
 
   private:
   	color ray_color(const ray& r, int depth);
@@ -100,6 +115,17 @@ void renderer::render_to_file(const std::string filename) {
   print_render_time(Time::now() - start_time, std::cout, 3);
 
   img.close();
+}
+
+void renderer::render_shifting_focus(point3 startpoint, point3 endpoint, int seconds, int fps) {
+  ray focus_line = ray(startpoint, endpoint-startpoint);
+  int total_frames = fps*seconds;
+
+  for (int curr_frame = 0; curr_frame < fps*seconds; ++curr_frame) {
+    double progress = (((double)(curr_frame))/total_frames);
+    cam.set_new_focus(focus_line.at(progress));
+    render_to_file(std::to_string(curr_frame) + ".ppm");
+  }
 }
 
 #endif

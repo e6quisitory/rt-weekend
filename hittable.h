@@ -1,6 +1,10 @@
 #ifndef HITTABLE_H
 #define HITTABLE_H
 
+#include <memory>
+#include "vec3.h"
+#include "ray.h"
+
 class material;
 
 struct hit_record {

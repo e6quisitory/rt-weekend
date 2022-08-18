@@ -1,22 +1,34 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
+#include "rtweekend.h"
+#include "vec3.h"
+#include "ray.h"
+
 class camera {
   public:
     camera() {}
-    camera(point3 lookfrom, point3 lookat, point3 focusat, vec3 vup, double aspr, double y_fov, double aperature) {
+    camera(point3 lookfrom, point3 lookat, point3 focusat, vec3 vup, double aspr, double yfov, double aperature) {
 
-      /* Set public vars */
       aspect_ratio = aspr;
-
-      vec3 looking_dir = lookat - lookfrom;
-      vec3 focus_dir = focusat - lookfrom;
-      focus_dist = focus_dir.length()*std::cos(angle_bw(looking_dir, focus_dir)); // project focus_dir onto looking_dir
-
+      y_fov = yfov;
+      
       /* Camera basis vectors */
-      view_dir = unit_vector(lookat - lookfrom);
+      origin = lookfrom;
+      view_dir = unit_vector(lookat - origin);
       x = unit_vector(cross(view_dir, vup));
       y = cross(-x, -view_dir);
+
+      set_new_focus(focusat);
+      
+      lens_radius = aperature/2;
+    
+    }
+
+    void set_new_focus(point3 focusat) {
+      /* Set focus distance */
+      vec3 focus_dir = focusat - origin;
+      double focus_dist = focus_dir.length()*std::cos(angle_bw(view_dir, focus_dir)); // project focus_dir onto looking_dir
 
       /* Use vertical FOV to set viewport dimensions */
       double h = std::tan(degrees_to_radians(y_fov)/2.0)*focus_dist;
@@ -24,12 +36,9 @@ class camera {
       double viewport_width = aspect_ratio * viewport_height;
 
       /* Set image/focus plane vars & lens radius*/
-      origin = lookfrom;
       horizontal = x * viewport_width;
       vertical = y * viewport_height;
       lower_left_corner = origin + focus_dist * view_dir - horizontal/2 - vertical/2;
-      lens_radius = aperature/2;
-    
     }
 
     vec3 random_in_unit_disk() const {
@@ -47,7 +56,7 @@ class camera {
 
   public:
     double aspect_ratio;
-    double focus_dist;
+    double y_fov;
 
   private:
     point3 origin;

@@ -1,6 +1,10 @@
 #ifndef DIELECTRIC_H
 #define DIELECTRIC_H
 
+#include "material.h"
+#include "vec3.h"
+#include "ray.h"
+
 class dielectric : public material {
   public:
     dielectric(double n) {

@@ -1,6 +1,8 @@
 #ifndef COLOR_H
 #define COLOR_H
 
+#include "vec3.h"
+
 #define MAX_COLOR 255
 
 void write_color(std::ofstream& out, color pixel_color) {

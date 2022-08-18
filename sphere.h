@@ -1,6 +1,8 @@
 #ifndef SPHERE_H
 #define SPHERE_H
 
+#include "rtweekend.h"
+
 class sphere : public hittable {
   public:
     sphere() {}

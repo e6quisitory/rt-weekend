@@ -1,4 +1,8 @@
-#include "rtweekend.h"
+
+#include "renderer.h"
+#include "matte.h"
+#include "metal.h"
+#include "sphere.h"
 
 int main() {
 
@@ -35,8 +39,15 @@ int main() {
   r.image_width = 500;
   r.image_height = r.image_width / r.cam.aspect_ratio; // image & viewport have same aspect ratio
 
-  r.render_to_file("render.ppm");
+  /* Render */
+  point3 left = point3(-l, 0, -1);
+  point3 middle = point3(0,0,-1);
+  point3 right = point3(l, 0, -1);
+
+  r.render_shifting_focus(left, right, 3, 30);
+  /* This will create 3*30=90 ppm frames. Then, we can run the following ffmpeg command to combine all the frames into an mp4. */
+  /* ffmpeg -framerate 30 -i "%01d.ppm" output.mp4 */
 
   return 0;
-
+  
 }

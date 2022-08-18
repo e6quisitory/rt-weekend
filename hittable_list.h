@@ -1,7 +1,10 @@
 #ifndef HITTABLE_LIST_H
 #define HITTABLE_LIST_H
 
+#include <memory>
 #include <vector>
+#include "hittable.h"
+#include "ray.h"
 
 class hittable_list : public hittable {
   public:
