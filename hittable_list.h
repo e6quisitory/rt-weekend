@@ -1,9 +1,7 @@
 #ifndef HITTABLE_LIST_H
 #define HITTABLE_LIST_H
 
-#include <memory>
 #include <vector>
-#include "hittable.h"
 
 class hittable_list : public hittable {
   public:

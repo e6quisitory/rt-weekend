@@ -1,11 +1,29 @@
 #ifndef RTWEEKEND_H
 #define RTWEEKEND_H
 
+#include <iostream>
+#include <fstream>
 #include <cmath>
-#include <limits>
+#include <float.h>
 #include <memory>
+#include <thread>
+#include <vector>
 #include <chrono>
 #include <cstdlib>
+#include <limits>
+
+#include "vec3.h"
+#include "color.h"
+#include "ray.h"
+#include "hittable.h"
+#include "hittable_list.h"
+#include "material.h"
+#include "sphere.h"
+#include "camera.h"
+#include "matte.h"
+#include "dielectric.h"
+#include "metal.h"
+#include "renderer.h"
 
 // Constants
 

@@ -1,12 +1,6 @@
 #ifndef DIELECTRIC_H
 #define DIELECTRIC_H
 
-#include <iostream>
-#include "rtweekend.h"
-#include <cmath>
-#include "material.h"
-#include "ray.h"
-
 class dielectric : public material {
   public:
     dielectric(double n) {
