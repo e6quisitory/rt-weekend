@@ -144,9 +144,8 @@ void renderer::render_spinning_circle(vec3 e1, vec3 e2, point3 center, point3 st
   for (int curr_frame = 0; curr_frame < total_frames; ++curr_frame) {
     double circle_prog = ((double)curr_frame)/total_frames;
     double angle = circle_prog*(2*pi);
-    cam.orient(radius*std::cos(angle)*x_hat + radius*std::sin(angle)*y_hat, center, up);
-    cam.focus(center);
-    render_to_file(std::to_string(curr_frame) + ".ppm");
+    cam.orient(center + (radius*std::cos(angle)*x_hat + radius*std::sin(angle)*y_hat), center, up);
+    render_to_file("output/" + std::to_string(curr_frame) + ".ppm");
   }
 }
 

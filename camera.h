@@ -30,9 +30,9 @@ class camera {
 
   public:
     double aspect_ratio;
+    point3 origin;
 
   private:
-    point3 origin;
     vec3 view_dir;
     vec3 x;
     vec3 y;
