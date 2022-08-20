@@ -13,6 +13,7 @@ int main() {
   point3 lookfrom = point3(1.2, 0, -0.1);
   point3 lookat = point3(0,0,-1);
   point3 focusat = point3(-std::cos(3.14159/4), 0.0, -1.0);
+
   vec3 vup = vec3(0,1,0);
   r.cam = camera(lookfrom, lookat, focusat, vup, 16.0/9.0, 70, 0.35);
 
@@ -32,11 +33,11 @@ int main() {
 
   /* Render quality specifications */
   r.core_count = std::thread::hardware_concurrency();
-  r.samples_per_pixel = 100;
+  r.samples_per_pixel = 5;
   r.bounce_depth = 50;
 
   /* Output file specifications */
-  r.image_width = 500;
+  r.image_width = 100;
   r.image_height = r.image_width / r.cam.aspect_ratio; // image & viewport have same aspect ratio
 
   /* Render */
@@ -44,9 +45,12 @@ int main() {
   point3 middle = point3(0,0,-1);
   point3 right = point3(l, 0, -1);
 
-  r.render_shifting_focus(left, right, 3, 30);
+  
+  //r.render_shifting_focus(left, right, 3, 30);
   /* This will create 3*30=90 ppm frames. Then, we can run the following ffmpeg command to combine all the frames into an mp4. */
   /* ffmpeg -framerate 30 -i "%01d.ppm" output.mp4 */
+
+  r.render_spinning_circle(x_hat(), -z_hat(), point3(0,0,-1), point3(0,0,1), 2, 30);
 
   return 0;
   

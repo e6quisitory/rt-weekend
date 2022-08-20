@@ -21,6 +21,7 @@ class renderer {
 
   	void render_to_file(const std::string filename);
     void render_shifting_focus(point3 startpoint, point3 endpoint, int seconds, int fps);
+    void render_spinning_circle(vec3 e1, vec3 e2, point3 center, point3 startpoint, int seconds, int fps);
 
   private:
   	color ray_color(const ray& r, int depth);
@@ -117,15 +118,37 @@ void renderer::render_to_file(const std::string filename) {
   img.close();
 }
 
+/* Renders frames of video where focus smoothly shifts from startpoint to endpoint throughout the video */
 void renderer::render_shifting_focus(point3 startpoint, point3 endpoint, int seconds, int fps) {
   ray focus_line = ray(startpoint, endpoint-startpoint);
   int total_frames = fps*seconds;
 
   for (int curr_frame = 0; curr_frame < fps*seconds; ++curr_frame) {
     double progress = (((double)(curr_frame))/total_frames);
-    cam.set_new_focus(focus_line.at(progress));
+    cam.focus(focus_line.at(progress));
     render_to_file(std::to_string(curr_frame) + ".ppm");
   }
 }
+
+/* Renders frames of video in which camera circles counter-clockwise around a central point (in plane specified by e1 & e2) */
+void renderer::render_spinning_circle(vec3 e1, vec3 e2, point3 center, point3 startpoint, int seconds, int fps) {
+  vec3 up = cross(e1, e2);
+  vec3 r = startpoint - center;
+  vec3 x_hat = unit_vector(r);
+  vec3 y_hat = unit_vector(cross(x_hat, -up));
+
+  double radius = r.length();
+  double circumf = 2*pi*radius;
+  int total_frames = fps*seconds;
+
+  for (int curr_frame = 0; curr_frame < total_frames; ++curr_frame) {
+    double circle_prog = ((double)curr_frame)/total_frames;
+    double angle = circle_prog*(2*pi);
+    cam.orient(radius*std::cos(angle)*x_hat + radius*std::sin(angle)*y_hat, center, up);
+    cam.focus(center);
+    render_to_file(std::to_string(curr_frame) + ".ppm");
+  }
+}
+
 
 #endif
