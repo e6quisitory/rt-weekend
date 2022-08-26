@@ -28,7 +28,7 @@ Here is a video to show off the raytracer and the video rendering capability tha
 The comments in the commits are quite rich with explanations of concepts, bugs and how I fixed them, more renders, etc. Feel free to have a look.
 
 ## Build Instructions
-I'm compiling and running on a 2012 MacBook Air, with MacOS Monterey. I'm compiling using g++ like so:
+I'm doing this project on a 2012 MacBook Air, with MacOS Monterey. I'm compiling using g++ like so:
 ```
 g++ -std=c++17 main.cpp
 ```
@@ -36,7 +36,7 @@ And running like so:
 ```
 ./a.out
 ```
-Single image renders should produce a `.ppm` file in the same directory as the executable. For for rendering videos, make a subfolder called `output`, and the video frames will be rendered into there. To combine the video frames into a video, `cd` into the `output` folder and run the following ffmpeg command:
+Single image renders should produce a `.ppm` file in the same directory as the executable. For rendering videos, make a subfolder called `output`, and the video frames will be rendered into there. To combine the video frames into a video, `cd` into the `output` folder and run the following ffmpeg command:
 ```
 ffmpeg -framerate 30 -i "%01d.ppm" output.mp4
 ```
