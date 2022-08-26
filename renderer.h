@@ -15,17 +15,33 @@
 #include "hittable_list.h"
 #include "rtweekend.h"
 
+struct video_params{
+  int seconds;
+  int fps;
+  video_params(int s, int f) : seconds(s), fps(f) {} 
+};
+
+struct spinning_circle_params {
+  vec3 e1;
+  vec3 e2;
+  point3 center;
+  double radians;
+  video_params vp;
+};
+
 class renderer {
   public:
-  	renderer() {}
+  	renderer() { frame_count = 0; }
 
   	void render_to_file(const std::string filename);
-    void render_shifting_focus(point3 startpoint, point3 endpoint, int seconds, int fps);
-    void render_spinning_circle(vec3 e1, vec3 e2, point3 center, point3 startpoint, int seconds, int fps);
+    void render_shifting_focus(point3 startpoint, point3 endpoint, const video_params& vp);
+    void render_spinning_circle(const spinning_circle_params& scp);
+    void render_straight_line(point3 endpoint, const video_params& vp);
 
   private:
   	color ray_color(const ray& r, int depth);
   	void render_to_mem(pixel* image);
+    int frame_count;
 
   public:
     hittable_list world;
@@ -118,36 +134,51 @@ void renderer::render_to_file(const std::string filename) {
   img.close();
 }
 
-/* Renders frames of video where focus smoothly shifts from startpoint to endpoint throughout the video */
-void renderer::render_shifting_focus(point3 startpoint, point3 endpoint, int seconds, int fps) {
+/* Renders frames of video where focus smoothly shifts from cam current origin to endpoint throughout the video */
+void renderer::render_shifting_focus(point3 startpoint, point3 endpoint, const video_params& vp) {
   ray focus_line = ray(startpoint, endpoint-startpoint);
-  int total_frames = fps*seconds;
+  int total_frames = vp.fps*vp.seconds;
 
-  for (int curr_frame = 0; curr_frame < fps*seconds; ++curr_frame) {
+  for (int curr_frame = 0; curr_frame < total_frames; ++curr_frame) {
     double progress = (((double)(curr_frame))/total_frames);
     cam.focus(focus_line.at(progress));
-    render_to_file(std::to_string(curr_frame) + ".ppm");
+    render_to_file("output/" + std::to_string(frame_count + curr_frame) + ".ppm");
   }
+  frame_count += total_frames;
 }
 
 /* Renders frames of video in which camera circles counter-clockwise around a central point (in plane specified by e1 & e2) */
-void renderer::render_spinning_circle(vec3 e1, vec3 e2, point3 center, point3 startpoint, int seconds, int fps) {
-  vec3 up = cross(e1, e2);
-  vec3 r = startpoint - center;
+void renderer::render_spinning_circle(const spinning_circle_params& scp) {
+  vec3 up = cross(scp.e1, scp.e2);
+  vec3 r = cam.origin - scp.center;
   vec3 x_hat = unit_vector(r);
   vec3 y_hat = unit_vector(cross(x_hat, -up));
 
   double radius = r.length();
-  double circumf = 2*pi*radius;
-  int total_frames = fps*seconds;
+  int total_frames = scp.vp.fps*scp.vp.seconds;
 
   for (int curr_frame = 0; curr_frame < total_frames; ++curr_frame) {
     double circle_prog = ((double)curr_frame)/total_frames;
-    double angle = circle_prog*(2*pi);
-    cam.orient(center + (radius*std::cos(angle)*x_hat + radius*std::sin(angle)*y_hat), center, up);
-    render_to_file("output/" + std::to_string(curr_frame) + ".ppm");
+    double angle = circle_prog*(scp.radians);
+    cam.orient(scp.center + (radius*std::cos(angle)*x_hat + radius*std::sin(angle)*y_hat), scp.center, up);
+    render_to_file("output/" + std::to_string(frame_count + curr_frame) + ".ppm");
   }
+  frame_count += total_frames;
 }
 
+void renderer::render_straight_line(point3 endpoint, const video_params& vp) {
+  vec3 path_vector = endpoint - cam.origin;
+  ray path_ray = ray(cam.origin, path_vector);
+  double path_length = path_vector.length();
+
+  int total_frames = vp.fps*vp.seconds;
+  double pan_amount_per_frame = path_length/total_frames;
+
+  for (int curr_frame = 0; curr_frame < total_frames; ++curr_frame) {
+    cam.pan(path_vector, pan_amount_per_frame);
+    render_to_file("output/" + std::to_string(frame_count + curr_frame) + ".ppm");
+  }
+  frame_count += total_frames;
+}
 
 #endif

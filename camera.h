@@ -13,12 +13,13 @@ class camera {
       y_fov = yfov;
       lens_radius = aperature/2;
 
-      orient(lookfrom, lookat, vup);
+      set_basis(lookfrom, lookat, vup);
       focus(focusat);
     }
 
     void orient(point3 lookfrom, point3 lookat, vec3 vup);
     void focus(point3 focusat);
+    void pan(vec3 direction, double pan_amount);
     ray get_ray(double u, double v) const;
 
   private:
@@ -31,17 +32,17 @@ class camera {
   public:
     double aspect_ratio;
     point3 origin;
+    vec3 y;
+    point3 lower_left_corner;
+    double focus_dist;
+    vec3 view_dir;
 
   private:
-    vec3 view_dir;
     vec3 x;
-    vec3 y;
     vec3 horizontal;
     vec3 vertical;
-    point3 lower_left_corner;
     double lens_radius;
     double y_fov;
-    double focus_dist;
     double viewport_height;
     double viewport_width;
 };
@@ -56,12 +57,19 @@ void camera::orient(point3 lookfrom, point3 lookat, vec3 vup) {
   set_imageplane_vecs();
 }
 
+/* For a simple pan (horizontal movement), everything remains the same except origin and lower_left_corner. */
+void camera::pan(vec3 direction, double pan_amount) {
+  direction = unit_vector(direction);
+  origin += direction*pan_amount;
+  set_imageplane_vecs();
+}
+
 /* Focus is solely determined by focus distance (assuming aspect ratio remains constant) */
 void camera::focus(point3 focusat) {
   /* Set focus distance */
   set_focus_distance(focusat);
 
-  /* Use vertical FOV to set viewport dimensions */
+  /* Use vertical FOV & focus_dist to set viewport dimensions */
   set_viewport_specs();
 
   /* Set image/focus plane vars */
@@ -76,8 +84,8 @@ void camera::set_basis(point3 lookfrom, point3 lookat, vec3 vup) {
 }
 
 void camera::set_focus_distance(point3 focusat) {
-  vec3 focus_dir = focusat - origin;
-  focus_dist = focus_dir.length()*std::cos(angle_bw(view_dir, focus_dir)); // project focus_dir onto looking_dir
+  vec3 focus_vector = focusat - origin;
+  focus_dist = focus_vector.length()*std::cos(angle_bw(view_dir, focus_vector)); // project focus_vector onto looking_dir
 }
 
 void camera::set_viewport_specs() {
