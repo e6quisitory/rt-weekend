@@ -1,10 +1,12 @@
 # Raytracing in One Weekend++
 This repository contains a raytracer built by following Peter Shirley's [Raytracing in One Weekend](https://raytracing.github.io/books/RayTracingInOneWeekend.html) guide, with some added functionality from myself.
+
+## Background
 My goal of following Shirley's guide is less to learn computer graphics and more to further my programming skills. I have some minor experience with C, and have done some stuff in Python, but I have never learnt OOP formally. And I have certainly never built any serious software like a raytracer using a low-level systems language like C++. 
 
 Why computer graphics? Why raytracing? Surely I could've picked some other project to tackle if my real goal is just to further my programming skills. The reason I picked computer graphics is because it seems to me like the area in computing that most sits at the intersection of the arts and CS. To this day, the most resonant media experience I've had is my first playthrough of _[The Last of Us](https://en.wikipedia.org/wiki/The_Last_of_Us)_. Pixar movies (_Up_, _WALL-E_, _Inside Out_) are also on the list. Such media, among others (see below) are my inspirations for delving into computer graphics.
 
-List of videos/media/people that have inspired me to delve into computer graphics:
+List of videos/media/people that inspire me to learn computer graphics:
   - [UNCHARTED 2: Among Thieves™ - Mastering the Cell (BTS #6)](https://www.youtube.com/watch?v=Az0CXkyoWjg)
   - [Tech Throwback: The Untapped Potential of PS3's CELL CPU And How Naughty Dog Mastered It](https://www.youtube.com/watch?v=6nG4YgtIYNA&t=11s)
   - The graphics quality of The Last of Us; the fact that it ran on 2006 hardware
@@ -17,6 +19,7 @@ List of videos/media/people that have inspired me to delve into computer graphic
 Currently I have gone through Shirley's guide and implemented all the functionality within it. I then decided to add some extra functionality (hence the ++ 😁):
   - Multithreading support to speed up render times on CPU
   - Video frames rendering (movable camera that can pan, spin, etc. as well as shift focus)
+  - Render time measurement
 
 Here is a video to show off the raytracer and the video rendering capability that I added:
 
