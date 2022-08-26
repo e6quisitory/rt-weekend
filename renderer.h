@@ -31,16 +31,16 @@ struct spinning_circle_params {
 
 class renderer {
   public:
-  	renderer() { frame_count = 0; }
+    renderer() { frame_count = 0; }
 
-  	void render_to_file(const std::string filename);
+    void render_to_file(const std::string filename);
     void render_shifting_focus(point3 startpoint, point3 endpoint, const video_params& vp);
     void render_spinning_circle(const spinning_circle_params& scp);
     void render_straight_line(point3 endpoint, const video_params& vp);
 
   private:
-  	color ray_color(const ray& r, int depth);
-  	void render_to_mem(pixel* image);
+    color ray_color(const ray& r, int depth);
+    void render_to_mem(pixel* image);
     int frame_count;
 
   public:
@@ -53,7 +53,7 @@ class renderer {
     int core_count;
 };
 
-/* Takes in a ray and a list of hittable objects and returns color of the object that was hit */
+/* Takes in a ray and bounce depth and returns color of the object that was hit */
 color renderer::ray_color(const ray& r, int depth) {
   // If bounce depth has been reached, return black color
   if (depth <= 0) return color(0,0,0);
@@ -134,7 +134,7 @@ void renderer::render_to_file(const std::string filename) {
   img.close();
 }
 
-/* Renders frames of video where focus smoothly shifts from cam current origin to endpoint throughout the video */
+/* Renders frames of video where focus smoothly shifts from given startpoint to endpoint throughout the video */
 void renderer::render_shifting_focus(point3 startpoint, point3 endpoint, const video_params& vp) {
   ray focus_line = ray(startpoint, endpoint-startpoint);
   int total_frames = vp.fps*vp.seconds;
@@ -147,7 +147,7 @@ void renderer::render_shifting_focus(point3 startpoint, point3 endpoint, const v
   frame_count += total_frames;
 }
 
-/* Renders frames of video in which camera circles counter-clockwise around a central point (in plane specified by e1 & e2) */
+/* Renders video frames of camera circling counter-clockwise around a central point (in plane specified by e1 & e2) */
 void renderer::render_spinning_circle(const spinning_circle_params& scp) {
   vec3 up = cross(scp.e1, scp.e2);
   vec3 r = cam.origin - scp.center;
@@ -166,6 +166,7 @@ void renderer::render_spinning_circle(const spinning_circle_params& scp) {
   frame_count += total_frames;
 }
 
+/* Renders video frames of camera moving in a straight line from current origin to given endpoint */
 void renderer::render_straight_line(point3 endpoint, const video_params& vp) {
   vec3 path_vector = endpoint - cam.origin;
   ray path_ray = ray(cam.origin, path_vector);
