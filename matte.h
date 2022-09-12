@@ -9,6 +9,8 @@
 
 class matte : public material {
   public:
+    typedef std::shared_ptr<matte> ptr;
+
     matte(color a) { albedo = a; }
     virtual ray scatter(const ray& r_in, const hit_record& rec) const override;
 };

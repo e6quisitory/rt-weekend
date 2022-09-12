@@ -4,14 +4,13 @@
 #include <memory>
 #include "vec3.h"
 #include "ray.h"
-
-class material;
+#include "material.h"
 
 struct hit_record {
   point3 p;
   vec3 normal;
   double t;
-  std::shared_ptr<material> material_ptr;
+  material::ptr material_ptr;
   bool is_front_face;
 
   inline void set_face_normal(const ray &r, const vec3 &outward_normal) {
@@ -22,6 +21,9 @@ struct hit_record {
 
 class hittable {
   public:
+    typedef std::shared_ptr<hittable> ptr;
+    typedef std::vector<ptr> ptr_list;
+    
     virtual bool hit(const ray &r, double t_min, double t_max, hit_record &rec) const = 0;
 };
 

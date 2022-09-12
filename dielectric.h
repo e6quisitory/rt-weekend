@@ -7,6 +7,8 @@
 
 class dielectric : public material {
   public:
+    typedef std::shared_ptr<dielectric> ptr;
+
     dielectric(double n) {
       albedo = color(0.98);
       refractive_index = n;

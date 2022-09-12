@@ -3,10 +3,13 @@
 
 #include "ray.h"
 #include "vec3.h"
-#include "hittable.h"
+
+struct hit_record;
 
 class material {
   public:
+    typedef std::shared_ptr<material> ptr;
+
     virtual ray scatter(const ray& r_in, const hit_record& rec) const = 0;  
 
   public:

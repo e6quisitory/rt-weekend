@@ -9,6 +9,8 @@
 
 class metal : public material {
   public:
+    typedef std::shared_ptr<metal> ptr;
+    
     metal(color a, double f) {
       albedo = a;
       fuzz = f <= 1 ? f : 1;

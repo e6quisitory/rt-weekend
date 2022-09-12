@@ -2,18 +2,20 @@
 #define SPHERE_H
 
 #include "rtweekend.h"
+#include <memory>
+#include "material.h"
 
 class sphere : public hittable {
   public:
     sphere() {}
-    sphere(point3 c, double r, std::shared_ptr<material> m): center(c), radius(r), material_ptr(m) {}
+    sphere(point3 c, double r, material::ptr m): center(c), radius(r), material_ptr(m) {}
 
     virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const override;
 
   public:
     point3 center;
     double radius;
-    std::shared_ptr<material> material_ptr;
+    material::ptr material_ptr;
 };
 
 bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
