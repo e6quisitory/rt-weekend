@@ -8,12 +8,12 @@
 class camera {
   public:
     camera() {}
-    camera(point3 lookfrom, point3 lookat, point3 focusat, vec3 vup, double aspr, double yfov, double aperature) {
+    camera(point3 lookfrom, point3 look_at, point3 focusat, vec3 vup, double aspr, double yfov, double aperature) {
       aspect_ratio = aspr;
       y_fov = yfov;
       lens_radius = aperature/2;
 
-      set_basis(lookfrom, lookat, vup);
+      set_basis(lookfrom, look_at, vup);
       focus(focusat);
     }
 
@@ -32,6 +32,7 @@ class camera {
   public:
     double aspect_ratio;
     point3 origin;
+    point3 lookat;
     vec3 y;
     point3 lower_left_corner;
     double focus_dist;
@@ -76,8 +77,9 @@ void camera::focus(point3 focusat) {
   set_imageplane_vecs();
 }
 
-void camera::set_basis(point3 lookfrom, point3 lookat, vec3 vup) {
+void camera::set_basis(point3 lookfrom, point3 look_at, vec3 vup) {
   origin = lookfrom;
+  lookat = look_at;
   view_dir = unit_vector(lookat - origin);
   x = unit_vector(cross(view_dir, vup));
   y = cross(-x, -view_dir);
@@ -85,7 +87,8 @@ void camera::set_basis(point3 lookfrom, point3 lookat, vec3 vup) {
 
 void camera::set_focus_distance(point3 focusat) {
   vec3 focus_vector = focusat - origin;
-  focus_dist = focus_vector.length()*std::cos(angle_bw(view_dir, focus_vector)); // project focus_vector onto looking_dir
+  vec3 lookat_vector = lookat - origin;
+  focus_dist = (dot(focus_vector, lookat_vector) / lookat_vector.length_squared()) * lookat_vector.length();  // project focus vector onto
 }
 
 void camera::set_viewport_specs() {

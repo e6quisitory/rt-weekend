@@ -150,10 +150,6 @@ vec3 reflect(const vec3& v_in, const vec3& n) {
   return v_in - 2*dot(v_in, n)*n;
 }
 
-inline double angle_bw(const vec3& v1, const vec3& v2) {
-  return std::acos( dot(v1, v2) / (v1.length() * v2.length()) );
-}
-
 inline vec3 x_hat() {
   return vec3(1,0,0);
 }

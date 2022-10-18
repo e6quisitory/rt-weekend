@@ -2,6 +2,7 @@
 #include "matte.h"
 #include "metal.h"
 #include "sphere.h"
+#include <SDL2/SDL.h>
 
 using namespace std;
 
@@ -11,9 +12,11 @@ int main() {
   renderer r;
 
   /* Camera setup */
-  point3 lookfrom = point3(-2, 0, 1);
-  point3 lookat = point3(-2,0,-1);
-  point3 focusat = lookat;
+  point3 lookfrom = point3(1, 0, 0.1);
+  point3 lookat = point3(0,0,-1);
+
+  auto l = cos(3.14159/4);
+  point3 focusat = point3(l,0.0,-1.0);
 
   r.cam = camera(lookfrom, lookat, focusat, y_hat(), 16.0/9.0, 70, 0.25);
 
@@ -25,7 +28,6 @@ int main() {
 
   /* Create world and add shaded objects */
   r.world = hittable_list();
-  auto l = cos(3.14159/4);
   r.world.add(make_shared<sphere>(point3( 0.0, -100.5*l, -1.0), 100.0*l, material_ground));
   r.world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.45*l, material_center));
   r.world.add(make_shared<sphere>(point3(-l,    0.0, -1.0),   0.5*l, material_left));
@@ -33,31 +35,36 @@ int main() {
 
   /* Render quality specifications */
   r.core_count = thread::hardware_concurrency();
-  r.samples_per_pixel = 50;
+  r.samples_per_pixel = 100;
   r.bounce_depth = 50;
 
   /* Output file specifications */
-  r.image_width = 400;
+  r.image_width = 600;
   r.image_height = r.image_width / r.cam.aspect_ratio; // image & viewport have same aspect ratio
 
-  /* Render */
-  r.render_straight_line(point3(0,0,1), video_params(1, 30));
-
-  spinning_circle_params scp = {
-    x_hat(),
-    -z_hat(),
-    point3(0,0,-1),
-    2*pi + 2.8*((2*pi/4)/4),
-    video_params(1, 30)
-  };
-
-  r.render_spinning_circle(scp);
-  r.render_straight_line(ray(r.cam.origin, point3(0,0,-1) - r.cam.origin).at(0.27), video_params(1, 30));
-
-  r.render_shifting_focus(r.cam.focus_dist*r.cam.view_dir, point3(l,0,-1), video_params(3, 30));
+//  /* Render */
+//  r.render_straight_line(point3(0,0,1), video_params(1, 30));
+//
+//  spinning_circle_params scp = {
+//    x_hat(),
+//    -z_hat(),
+//    point3(0,0,-1),
+//    2*pi + 2.8*((2*pi/4)/4),
+//    video_params(1, 30)
+//  };
+//
+//  r.render_spinning_circle(scp);
+//  r.render_straight_line(ray(r.cam.origin, point3(0,0,-1) - r.cam.origin).at(0.27), video_params(1, 30));
+//
+//  r.render_shifting_focus(r.cam.focus_dist*r.cam.view_dir, point3(l,0,-1), video_params(3, 30));
+//
+//  r.render_to_file("mt_test.ppm");
+//  r.render_to_file_st("st_test.ppm");
 
   // The output frames can be combined into an mp4 with the follwoing command: ffmpeg -framerate 30 -i "output/%01d.ppm" output.mp4
-  
+
+  r.render_to_window();
+
   return 0;
 
 }

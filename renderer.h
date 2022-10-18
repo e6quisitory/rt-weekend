@@ -6,7 +6,9 @@
 #include <iostream>
 #include <fstream>
 #include <limits>
+#include <memory>
 #include <float.h>
+#include <SDL2/SDL.h>
 
 #include "camera.h"
 #include "color.h"
@@ -31,19 +33,23 @@ struct spinning_circle_params {
 
 class renderer {
   public:
-    renderer() { frame_count = 0; }
+    renderer() {
+      frame_count = 0;
+    }
 
     void render_to_file(const std::string filename);
+    void render_to_window();
     void render_shifting_focus(point3 startpoint, point3 endpoint, const video_params& vp);
     void render_spinning_circle(const spinning_circle_params& scp);
     void render_straight_line(point3 endpoint, const video_params& vp);
 
   private:
     color ray_color(const ray& r, int depth);
-    void render_to_mem(pixel* image);
+    void st_render_to_mem(pixel* image);
+    pixel* mt_render_to_mem();
     int frame_count;
 
-  public:
+  public:  // perhaps make a bunch of these private and set them in the constructor
     hittable_list world;
     camera cam;
     int image_width;
@@ -56,7 +62,7 @@ class renderer {
 /* Takes in a ray and bounce depth and returns color of the object that was hit */
 color renderer::ray_color(const ray& r, int depth) {
   // If bounce depth has been reached, return black color
-  if (depth <= 0) return color(0,0,0);
+  if (depth < 0) return color(0,0,0);
 
   hit_record rec;
   ray reflected_ray;
@@ -68,118 +74,194 @@ color renderer::ray_color(const ray& r, int depth) {
   return color(1,1,1);
 }
 
-/* Renders image into an array of pixels in memory (splits samples_per_pixel across # of threads) */
-void renderer::render_to_mem(pixel* image) {
-  int divided_spp = samples_per_pixel/core_count;
-  for (int i = image_height; i > 0; --i) {
-    for (int j = 0; j < image_width; ++j) {
-      color sum;
-      for (int k = 0; k < divided_spp; ++k) {
-          double u = (j+random_double()) / image_width;
-          double v = (i+random_double()) / image_height;
-          ray r = cam.get_ray(u, v);
-          sum += ray_color(r, bounce_depth);
-      }
-      image[(image_height-i)*image_width + j] = sqrt(sum/divided_spp);  // sqrt for gamma correction
+/* Single-threaded render to memory location passed in as argument */
+void renderer::st_render_to_mem(pixel* image) {
+    // Split the render across all cores
+    int divided_spp = samples_per_pixel/core_count;
+
+    for (int i = image_height; i > 0; --i) {
+        for (int j = 0; j < image_width; ++j) {
+            color sum;
+            for (int k = 0; k < divided_spp; ++k) {
+                double u = (j+random_double()) / image_width;
+                double v = (i+random_double()) / image_height;
+                ray r = cam.get_ray(u, v);
+                sum += ray_color(r, bounce_depth);
+            }
+            image[(image_height-i)*image_width + j] = sqrt(sum/divided_spp);  // sqrt for gamma correction
+        }
     }
-  }
+}
+
+/* Multi-threaded render to memory; memory location containing image is returned. */
+pixel* renderer::mt_render_to_mem() {
+
+    // create an array of images (pixel arrays), one for each CPU core
+    pixel* images[core_count];
+
+    // create an array of threads
+    std::thread threads[core_count-1];
+
+    // initialize images (set the size of the arrays)
+    for (int i = 0; i < core_count; ++i)
+        images[i] = new pixel[image_height*image_width];
+
+    // launch core_count-1 threads for image rendering
+    for (int i = 0; i < core_count-1; ++i)
+        threads[i] = std::thread(&renderer::st_render_to_mem, this, images[i]);
+
+    // render image on this thread
+    st_render_to_mem(images[core_count-1]);
+
+    // join launched threads
+    for (int i = 0; i < core_count-1; ++i)
+        threads[i].join();
+
+    // average all the images
+    pixel* final_image = new pixel[image_width*image_height];
+    for (int i = 0; i < image_height*image_width; ++i) {       // iterate over every single pixel
+        pixel sum;
+        for (int j = 0; j < core_count; ++j)                   // average the current pixel across all images
+            sum += images[j][i];
+
+        final_image[i] = sum/core_count;
+    }
+
+    // delete pixel arrays (images) out of memory
+    for (int i = 0; i < core_count; ++i) { delete [] images[i]; }
+
+    return final_image;
 }
 
 /* Renders image into a file (multithreaded) */
 void renderer::render_to_file(const std::string filename) {
 
-  /* Create output image stream */
-  std::ofstream img;
-  img.open(filename);
-  img << "P3\n" << image_width << ' ' << image_height << "\n255\n"; 
+    /* Create output image stream */
+    std::ofstream img;
+    img.open(filename);
+    img << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-  /* Render image */
-  auto start_time = Time::now();
- 
-  // create an array of images (pixel arrays), one for each CPU core
-  pixel* images[core_count];
+    /* Render start time */
+    auto start_time = Time::now();
 
-  // create an array of threads
-  std::thread threads[core_count-1];
+    // Render image
+    pixel* image = mt_render_to_mem();
+    print_render_time(Time::now() - start_time, std::cout, 3);
 
-  // initialize images (set the size of the arrays)
-  for (int i = 0; i < core_count; ++i)
-    images[i] = new pixel[image_height*image_width];
+    // Write pixel values from memory into file
+    for (int i = 0; i < image_width*image_height; ++i)
+        write_color(img, image[i]);
 
-  // launch core_count-1 threads for image rendering
-  for (int i = 0; i < core_count-1; ++i)
-    threads[i] = std::thread(&renderer::render_to_mem, this, images[i]);
+    // Deallocate image out of memory
+    delete [] image;
 
-  // render image on this thread
-  render_to_mem(images[core_count-1]);
+    img.close();
+}
 
-  // join launched threads
-  for (int i = 0; i < core_count-1; ++i)
-    threads[i].join();
+/* Renders scene and shows it in a program window */
+void renderer::render_to_window() {
 
-  // average all the images
-  for (int i = 0; i < image_height*image_width; ++i) {
-    color sum;
-    for (int j = 0; j < core_count; ++j)
-      sum += images[j][i];
-    write_color(img, sum/core_count);
-  }
+    // Create window and renderer
+    SDL_Window* window = SDL_CreateWindow( "Raytracing in One Weekend++", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, image_width, image_height, SDL_WINDOW_SHOWN);
+    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-  // delete pixel arrays (images) out of memory
-  for (int i = 0; i < core_count; ++i)
-    delete images[i];
+    SDL_Texture* buffer = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, image_width, image_height);
 
-  print_render_time(Time::now() - start_time, std::cout, 3);
+    Uint32* pixels = NULL;  // An elaborate setup (that I don't understand) with the (void**) below that gives us access to the pixels array only during the texture being locked
+    int pitch = 4*image_width;
+    // Lock texture so that we can edit the raw pixels array
+    SDL_LockTexture(buffer, NULL, (void**) &pixels, &pitch);
 
-  img.close();
+    // Render scene to memory
+    auto start_time = Time::now();
+    pixel* image = mt_render_to_mem();
+    print_render_time(Time::now() - start_time, std::cout, 3);
+
+    // Edit pixels array of texture
+    for (int j = 0; j < image_height*image_width; ++j)
+      pixels[j] = convert_to_ARGB8888(image[j]);
+
+    // Deallocate rendered image out of memory
+    delete [] image;
+
+    // Unlock texture as we're now done editing the pixels
+    SDL_UnlockTexture(buffer);
+
+    // Copy texture to renderer
+    SDL_RenderCopy(renderer, buffer, NULL, NULL);
+
+    // Refresh renderer
+    SDL_RenderPresent(renderer);
+
+    // Rendering is done, thus, deallocate texture & renderer
+    SDL_DestroyTexture(buffer);
+    SDL_DestroyRenderer(renderer);
+
+    //Hack to get window to stay up
+    SDL_Event e;
+    bool quit = false;
+    while(quit == false)
+    {
+      while(SDL_PollEvent( &e ))
+      {
+          if(e.type == SDL_QUIT)
+              quit = true;
+      }
+    }
+
+    // Deallocate window
+    SDL_DestroyWindow(window);
+
+    // Qut all SDL subsystems
+    SDL_Quit();
 }
 
 /* Renders frames of video where focus smoothly shifts from given startpoint to endpoint throughout the video */
 void renderer::render_shifting_focus(point3 startpoint, point3 endpoint, const video_params& vp) {
-  ray focus_line = ray(startpoint, endpoint-startpoint);
-  int total_frames = vp.fps*vp.seconds;
+    ray focus_line = ray(startpoint, endpoint-startpoint);
+    int total_frames = vp.fps*vp.seconds;
 
-  for (int curr_frame = 0; curr_frame < total_frames; ++curr_frame) {
+    for (int curr_frame = 0; curr_frame < total_frames; ++curr_frame) {
     double progress = (((double)(curr_frame))/total_frames);
     cam.focus(focus_line.at(progress));
     render_to_file("output/" + std::to_string(frame_count + curr_frame) + ".ppm");
-  }
-  frame_count += total_frames;
+    }
+    frame_count += total_frames;
 }
 
 /* Renders video frames of camera circling counter-clockwise around a central point (in plane specified by e1 & e2) */
 void renderer::render_spinning_circle(const spinning_circle_params& scp) {
-  vec3 up = cross(scp.e1, scp.e2);
-  vec3 r = cam.origin - scp.center;
-  vec3 x_hat = unit_vector(r);
-  vec3 y_hat = unit_vector(cross(x_hat, -up));
+    vec3 up = cross(scp.e1, scp.e2);
+    vec3 r = cam.origin - scp.center;
+    vec3 x_hat = unit_vector(r);
+    vec3 y_hat = unit_vector(cross(x_hat, -up));
 
-  double radius = r.length();
-  int total_frames = scp.vp.fps*scp.vp.seconds;
+    double radius = r.length();
+    int total_frames = scp.vp.fps*scp.vp.seconds;
 
-  for (int curr_frame = 0; curr_frame < total_frames; ++curr_frame) {
+    for (int curr_frame = 0; curr_frame < total_frames; ++curr_frame) {
     double circle_prog = ((double)curr_frame)/total_frames;
     double angle = circle_prog*(scp.radians);
     cam.orient(scp.center + (radius*std::cos(angle)*x_hat + radius*std::sin(angle)*y_hat), scp.center, up);
     render_to_file("output/" + std::to_string(frame_count + curr_frame) + ".ppm");
-  }
-  frame_count += total_frames;
+    }
+    frame_count += total_frames;
 }
 
 /* Renders video frames of camera moving in a straight line from current origin to given endpoint */
 void renderer::render_straight_line(point3 endpoint, const video_params& vp) {
-  vec3 path_vector = endpoint - cam.origin;
-  ray path_ray = ray(cam.origin, path_vector);
-  double path_length = path_vector.length();
+    vec3 path_vector = endpoint - cam.origin;
+    ray path_ray = ray(cam.origin, path_vector);
+    double path_length = path_vector.length();
 
-  int total_frames = vp.fps*vp.seconds;
-  double pan_amount_per_frame = path_length/total_frames;
+    int total_frames = vp.fps*vp.seconds;
+    double pan_amount_per_frame = path_length/total_frames;
 
-  for (int curr_frame = 0; curr_frame < total_frames; ++curr_frame) {
+    for (int curr_frame = 0; curr_frame < total_frames; ++curr_frame) {
     cam.pan(path_vector, pan_amount_per_frame);
     render_to_file("output/" + std::to_string(frame_count + curr_frame) + ".ppm");
-  }
-  frame_count += total_frames;
+    }
+    frame_count += total_frames;
 }
 
 #endif
