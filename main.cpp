@@ -39,7 +39,7 @@ int main() {
   r.bounce_depth = 50;
 
   /* Output file specifications */
-  r.image_width = 600;
+  r.image_width = 200;
   r.image_height = r.image_width / r.cam.aspect_ratio; // image & viewport have same aspect ratio
 
 //  /* Render */
@@ -64,7 +64,7 @@ int main() {
   // The output frames can be combined into an mp4 with the follwoing command: ffmpeg -framerate 30 -i "output/%01d.ppm" output.mp4
 
   r.render_to_window();
+  r.render_to_file("test.ppm");
 
   return 0;
-
 }

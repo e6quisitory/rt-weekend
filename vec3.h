@@ -117,6 +117,10 @@ inline vec3 operator/(const vec3& v1, double t) {
   return vec3(v1.e[0]/t, v1.e[1]/t, v1.e[2]/t);
 }
 
+inline vec3 operator/(const vec3& v1, int t) {
+    return vec3(v1.e[0]/t, v1.e[1]/t, v1.e[2]/t);
+}
+
 vec3 operator^(const vec3& v, double d) {
   return vec3( pow(v.e[0], d), pow(v.e[1], d), pow(v.e[2], d) );
 }
