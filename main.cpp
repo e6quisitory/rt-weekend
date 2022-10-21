@@ -18,7 +18,7 @@ int main() {
   auto l = cos(3.14159/4);
   point3 focusat = point3(l,0.0,-1.0);
 
-  r.cam = camera(lookfrom, lookat, focusat, y_hat(), 16.0/9.0, 70, 0.25);
+  r.cam = camera(lookfrom, lookat, focusat, y_hat(), 16.0/9.0, 70, 0.15);
 
   /* Materials specifications */
   matte::ptr material_ground = make_shared<matte>(color(0.8, 0.8, 0.0));
@@ -39,7 +39,7 @@ int main() {
   r.bounce_depth = 50;
 
   /* Output file specifications */
-  r.image_width = 200;
+  r.image_width = 500;
   r.image_height = r.image_width / r.cam.aspect_ratio; // image & viewport have same aspect ratio
 
 //  /* Render */

@@ -3,42 +3,41 @@
 
 #include "vec3.h"
 
-typedef pixel* image;
-typedef image* image_list;
-
-/* Allocates image on heap and returns pointer to it */
-image alloc_image(int width, int height) {
-    return new pixel[width * height];        // initialized to black, as per vec3 default constructor
-}
-
-/* Allocates an array of images on heap and returns point to array */
-image_list alloc_images(int width, int height, int num_images) {
-    image_list images = new image[num_images];                    // Allocate an array of image pointers on heap
-
-    for (int i = 0; i < num_images; i++)                          // Fill image pointers array with valid pointers to allocated individual images on heap
-        images[i] = alloc_image(width, height);
-
-    return images;
-}
-
-/* Takes in a list of images; deletes each image, and then deletes the list itself, out of memory */
-void delete_images(image_list images, int num_images) {
-    for (int i = 0; i < num_images; ++i)                 // free each image
-        delete [] images[i];
-    delete [] images;                                    // free list of images
-}
-
-/* Takes in list of images, averages them, and returns averaged image */
-image average_images(image_list images, int num_images, int width, int height) {
-    image averaged = alloc_image(width, height);
-    for (int i = 0; i < width * height; ++i) {
-        pixel sum;
-        for (int j = 0; j < num_images; ++j)
-            sum += images[j][i];
-
-        averaged[i] = sum/num_images;
+class image {
+public:
+    image(const int w, const int h): width(w), height(h) {
+        pixels = new pixel*[width];
+        for (int i = 0; i < width; ++i)
+            pixels[i] = new pixel[height];
     }
-    return averaged;
-}
+
+    ~image() {
+        for (int i = 0; i < width; ++i)
+            delete[] pixels[i];
+        delete[] pixels;
+        std::cout << "image deleted out of memory" << std::endl;
+    }
+
+    pixel& operator [] (int index) {   // If operator is called on non-const object, allow modification, hence return by reference.
+        return pixels[index % width][index / width];
+    }
+
+    pixel operator [] (int index) const {   // If operator is called on const object, do not allow modification, hence return by value.
+        return pixels[index % width][index / width];
+    }
+
+    pixel& operator () (int x, int y) {
+        return pixels[x][y];
+    }
+
+    pixel operator () (int x, int y) const {
+        return pixels[x][y];
+    }
+
+public:
+    int width;
+    int height;
+    pixel** pixels;
+};
 
 #endif

@@ -100,7 +100,7 @@ void camera::set_viewport_specs() {
 void camera::set_imageplane_vecs() {
   horizontal = x * viewport_width;
   vertical = y * viewport_height;
-  lower_left_corner = origin + focus_dist * view_dir - horizontal/2 - vertical/2;
+  lower_left_corner = origin + focus_dist * view_dir - horizontal/2 - vertical/2; // The image plane is *at* the focus plane
 }
 
 vec3 camera::random_in_unit_disk() const {

@@ -45,9 +45,9 @@ class renderer {
     void render_straight_line(point3 endpoint, const video_params& vp);
 
   private:
-    color ray_color(const ray& r, int depth) const;
-    void st_render_to_mem(image img) const;
-    image mt_render_to_mem(image_list images) const;
+    pixel ray_color(const ray& r, int depth) const;
+    void st_render_to_mem(image& avg_image) const;
+    void mt_render_to_mem(image& output_image) const;
     int frame_count;
 
   public:  // perhaps make a bunch of these private and set them in the constructor
@@ -60,28 +60,28 @@ class renderer {
     int core_count;
 };
 
-/* Takes in a ray and bounce depth and returns color of the object that was hit */
-color renderer::ray_color(const ray& r, int depth) const {
-  // If bounce depth has been reached, return black color
-  if (depth < 0) return color(0,0,0);
+/* Takes in a ray and bounce depth and returns RGB color of the object that was hit */
+pixel renderer::ray_color(const ray& r, int depth) const {
+    // If bounce depth has been reached, return black color
+    if (depth < 0) return color(0,0,0);
 
-  hit_record rec;
-  ray reflected_ray;
+    hit_record rec;
+    ray reflected_ray;
 
-  if (world.hit(r, 0.001, DBL_MAX, rec)) {
-    reflected_ray = rec.material_ptr->scatter(r, rec); 
-    return rec.material_ptr->albedo * ray_color(reflected_ray, depth-1);
-  }
-  return color(1,1,1);
+    if (world.hit(r, 0.001, DBL_MAX, rec)) {
+        reflected_ray = rec.material_ptr->scatter(r, rec);
+        return rec.material_ptr->albedo * ray_color(reflected_ray, depth-1);
+    }
+    return pixel(1,1,1);
 }
 
-/* Single-threaded render to memory location passed in as argument */
-void renderer::st_render_to_mem(image img) const {
+/* Single-threaded render to memory location passed in. Adds final pixel divided by core count to each output pixel. */
+void renderer::st_render_to_mem(image& avg_image) const {
 
     // Split the render across all cores
     int divided_spp = samples_per_pixel/core_count;
 
-    for (int i = image_height; i > 0; --i) {
+    for (int i = 0; i < image_height; ++i) {
         for (int j = 0; j < image_width; ++j) {
             color sum;
             for (int k = 0; k < divided_spp; ++k) {
@@ -90,58 +90,52 @@ void renderer::st_render_to_mem(image img) const {
                 ray r = cam.get_ray(u, v);
                 sum += ray_color(r, bounce_depth);
             }
-            img[(image_height-i)*image_width + j] = sqrt(sum/divided_spp);  // sqrt for gamma correction
+            pixel final = sqrt(sum/divided_spp);   // sqrt for gamma correction
+            pixel partial_avg = final / core_count;
+            avg_image(j,image_height - i) += partial_avg;   // image_height-i to account for vertical flipping in the output image
         }
     }
 }
 
-/* Multi-threaded render to memory; takes in images array to render to; returns pointer to final, averaged image */
-image renderer::mt_render_to_mem(image_list images) const {
+/* Multi-threaded render to memory location passed in */
+void renderer::mt_render_to_mem(image& output_image) const {
 
     // create an array of threads
     std::thread threads[core_count];
 
     // launch as many threads as CPU cores, rendering one image on each thread
     for (int i = 0; i < core_count; ++i)
-        threads[i] = std::thread(&renderer::st_render_to_mem, this, images[i]);
+        threads[i] = std::thread(&renderer::st_render_to_mem, this, std::ref(output_image));
 
     // join launched threads
     for (int i = 0; i < core_count; ++i)
         threads[i].join();
-
-    // Average images and return
-    return average_images(images, core_count, image_width, image_height);
 }
 
 /* Renders image into a file (multithreaded) */
 void renderer::render_to_file(const std::string filename) const {
 
-    // Create output image stream
+    // Create output file stream
     std::ofstream PPM;
     PPM.open(filename);
     PPM << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
-    // Render start time
+    // Allocate new image
+    image output(image_width, image_height);
+
+    // Render into memory
     auto start_time = Time::now();
-
-    // Allocate images list
-    image_list partial_renders = alloc_images(image_width, image_height, core_count);
-
-    // Render image
-    image final_render = mt_render_to_mem(partial_renders);
+    mt_render_to_mem(output);
     print_render_time(Time::now() - start_time, std::cout, 3);
-
-    // Delete list of images out of memory
-    delete_images(partial_renders, core_count);
 
     // Write pixel values from memory into file
     for (int i = 0; i < image_width*image_height; ++i)
-        write_color(PPM, final_render[i]);
+        write_color(PPM, output[i]);
 
-    // Deallocate rendered image out of memory
-    delete [] final_render;
-
+    // Close output file stream
     PPM.close();
+
+    // image will automatically get deallocated. It is declared on stack, and destructor will thus automatically be called.
 }
 
 /* Renders scene and shows it in a program window */
@@ -159,18 +153,14 @@ void renderer::render_to_window() const {
     SDL_LockTexture(buffer, NULL, (void**) &pixels, &pitch);
 
     // Render scene to memory
-    image_list partial_renders = alloc_images(image_width, image_height, core_count);
+    image output(image_width, image_height);
     auto start_time = Time::now();
-    image final_render = mt_render_to_mem(partial_renders);
+    mt_render_to_mem(output);
     print_render_time(Time::now() - start_time, std::cout, 3);
-    delete_images(partial_renders, core_count);
 
     // Edit pixels array of texture
     for (int j = 0; j < image_height*image_width; ++j)
-      pixels[j] = convert_to_ARGB8888(final_render[j]);
-
-    // Deallocate rendered image out of memory
-    delete [] final_render;
+      pixels[j] = convert_to_ARGB8888(output[j]);
 
     // Unlock texture as we're now done editing the pixels
     SDL_UnlockTexture(buffer);
@@ -202,6 +192,8 @@ void renderer::render_to_window() const {
 
     // Qut all SDL subsystems
     SDL_Quit();
+
+    // image in memory will automatically get deallocated as it is declared on stack and thus destructor will automatically get called
 }
 
 /* Renders frames of video where focus smoothly shifts from given startpoint to endpoint throughout the video */
