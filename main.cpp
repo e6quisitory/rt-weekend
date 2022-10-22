@@ -8,39 +8,39 @@ using namespace std;
 
 int main() {
 
-  /* Initialize renderer */
-  renderer r;
+    /* Initialize renderer */
+    renderer r;
 
-  /* Camera setup */
-  point3 lookfrom = point3(1, 0, 0.1);
-  point3 lookat = point3(0,0,-1);
+    /* Camera setup */
+    point3 lookfrom = point3(1, 0, 0.1);
+    point3 lookat = point3(0,0,-1);
 
-  auto l = cos(3.14159/4);
-  point3 focusat = point3(l,0.0,-1.0);
+    auto l = cos(3.14159/4);
+    point3 focusat = point3(l,0.0,-1.0);
 
-  r.cam = camera(lookfrom, lookat, focusat, y_hat(), 16.0/9.0, 70, 0.15);
+    r.cam = camera(lookfrom, lookat, focusat, y_hat(), 16.0/9.0, 70, 0.05);
 
-  /* Materials specifications */
-  matte::ptr material_ground = make_shared<matte>(color(0.8, 0.8, 0.0));
-  matte::ptr material_center = make_shared<matte>(color(0.4));
-  metal::ptr material_left   = make_shared<metal>(color(0.8, 0.8, 0.8), 0.1);
-  metal::ptr material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.2);
+    /* Materials specifications */
+    matte::ptr material_ground = make_shared<matte>(color(0.8, 0.8, 0.0));
+    matte::ptr material_center = make_shared<matte>(color(0.4));
+    metal::ptr material_left   = make_shared<metal>(color(0.8, 0.8, 0.8), 0.1);
+    metal::ptr material_right  = make_shared<metal>(color(0.8, 0.6, 0.2), 0.2);
 
-  /* Create world and add shaded objects */
-  r.world = hittable_list();
-  r.world.add(make_shared<sphere>(point3( 0.0, -100.5*l, -1.0), 100.0*l, material_ground));
-  r.world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.45*l, material_center));
-  r.world.add(make_shared<sphere>(point3(-l,    0.0, -1.0),   0.5*l, material_left));
-  r.world.add(make_shared<sphere>(point3( l,    0.0, -1.0),   0.5*l, material_right));
+    /* Create world and add shaded objects */
+    r.world = hittable_list();
+    r.world.add(make_shared<sphere>(point3( 0.0, -100.5*l, -1.0), 100.0*l, material_ground));
+    r.world.add(make_shared<sphere>(point3( 0.0,    0.0, -1.0),   0.45*l, material_center));
+    r.world.add(make_shared<sphere>(point3(-l,    0.0, -1.0),   0.5*l, material_left));
+    r.world.add(make_shared<sphere>(point3( l,    0.0, -1.0),   0.5*l, material_right));
 
-  /* Render quality specifications */
-  r.core_count = thread::hardware_concurrency();
-  r.samples_per_pixel = 100;
-  r.bounce_depth = 50;
+    /* Render quality specifications */
+    r.core_count = thread::hardware_concurrency();
+    r.samples_per_pixel = 10;
+    r.bounce_depth = 50;
 
-  /* Output file specifications */
-  r.image_width = 500;
-  r.image_height = r.image_width / r.cam.aspect_ratio; // image & viewport have same aspect ratio
+    /* Output file specifications */
+    r.image_width = 1280;
+    r.image_height = r.image_width / r.cam.aspect_ratio; // image & viewport have same aspect ratio
 
 //  /* Render */
 //  r.render_straight_line(point3(0,0,1), video_params(1, 30));
@@ -61,10 +61,10 @@ int main() {
 //  r.render_to_file("mt_test.ppm");
 //  r.render_to_file_st("st_test.ppm");
 
-  // The output frames can be combined into an mp4 with the follwoing command: ffmpeg -framerate 30 -i "output/%01d.ppm" output.mp4
+    // The output frames can be combined into an mp4 with the follwoing command: ffmpeg -framerate 30 -i "output/%01d.ppm" output.mp4
 
-  r.render_to_window();
-  r.render_to_file("test.ppm");
+    r.render_to_window();
+    r.render_to_file("scene.ppm");
 
-  return 0;
+    return 0;
 }

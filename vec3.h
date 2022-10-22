@@ -9,13 +9,13 @@ class vec3 {
     vec3(double d): e{d,d,d} {}
     vec3(): e{0,0,0} {} // initialize components to 0 if nothing passed in
 
-    double x() { return e[0]; };
-    double y() { return e[1]; };
-    double z() { return e[2]; };
+    double x() const { return e[0]; };
+    double y() const { return e[1]; };
+    double z() const { return e[2]; };
     
-    double R() { return e[0]; };
-    double G() { return e[1]; };
-    double B() { return e[2]; };
+    double R() const { return e[0]; };
+    double G() const { return e[1]; };
+    double B() const { return e[2]; };
 
     /* operators below included as member functions all are concerned with reading/modifying an individual vec3 object. Not concerned with operations *b/w* vec3 objects
        In other words, these are functions you'd call *through* an object. */
@@ -152,6 +152,10 @@ point3 random_in_unit_sphere() {
 
 vec3 reflect(const vec3& v_in, const vec3& n) {
   return v_in - 2*dot(v_in, n)*n;
+}
+
+inline double angle_bw(const vec3& v1, const vec3& v2) {
+    return std::acos( dot(v1, v2) / (v1.length() * v2.length()) );
 }
 
 inline vec3 x_hat() {

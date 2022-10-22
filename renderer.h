@@ -7,8 +7,10 @@
 #include <fstream>
 #include <limits>
 #include <memory>
+#include <vector>
 #include <float.h>
 #include <SDL2/SDL.h>
+#include <chrono>
 
 #include "camera.h"
 #include "color.h"
@@ -16,7 +18,8 @@
 #include "material.h"
 #include "hittable_list.h"
 #include "rtweekend.h"
-#include "image.h"
+
+using namespace std::chrono_literals;
 
 struct video_params{
   int seconds;
@@ -46,8 +49,8 @@ class renderer {
 
   private:
     pixel ray_color(const ray& r, int depth) const;
-    void st_render_to_mem(image& avg_image) const;
-    void mt_render_to_mem(image& output_image) const;
+    void st_render_to_mem(std::vector<Uint32>& pixels, bool* KILL) const;
+    void mt_render_to_mem(std::vector<Uint32>& pixels, bool* RENDER_DONE, bool* KILL) const;
     int frame_count;
 
   public:  // perhaps make a bunch of these private and set them in the constructor
@@ -76,13 +79,14 @@ pixel renderer::ray_color(const ray& r, int depth) const {
 }
 
 /* Single-threaded render to memory location passed in. Adds final pixel divided by core count to each output pixel. */
-void renderer::st_render_to_mem(image& avg_image) const {
+void renderer::st_render_to_mem(std::vector<Uint32>& pixels, bool* KILL) const {
 
     // Split the render across all cores
     int divided_spp = samples_per_pixel/core_count;
 
     for (int i = 0; i < image_height; ++i) {
         for (int j = 0; j < image_width; ++j) {
+            if (KILL != nullptr) if (*KILL == true) goto done;
             color sum;
             for (int k = 0; k < divided_spp; ++k) {
                 double u = (j+random_double()) / image_width;
@@ -92,24 +96,35 @@ void renderer::st_render_to_mem(image& avg_image) const {
             }
             pixel final = sqrt(sum/divided_spp);   // sqrt for gamma correction
             pixel partial_avg = final / core_count;
-            avg_image(j,image_height - i) += partial_avg;   // image_height-i to account for vertical flipping in the output image
+            pixels[((image_height-i)*image_width)+j] += convert_to_ARGB8888(partial_avg);
         }
     }
+    done: {};
 }
 
 /* Multi-threaded render to memory location passed in */
-void renderer::mt_render_to_mem(image& output_image) const {
+void renderer::mt_render_to_mem(std::vector<Uint32>& pixels, bool* RENDER_DONE, bool* KILL) const {
 
     // create an array of threads
     std::thread threads[core_count];
 
+    // counter for st render threads completion
+    int render_completion_count = 0;
+
     // launch as many threads as CPU cores, rendering one image on each thread
     for (int i = 0; i < core_count; ++i)
-        threads[i] = std::thread(&renderer::st_render_to_mem, this, std::ref(output_image));
+        threads[i] = std::thread(&renderer::st_render_to_mem, this, std::ref(pixels), KILL);
 
-    // join launched threads
+    // Wait for all threads to finish their renders
     for (int i = 0; i < core_count; ++i)
         threads[i].join();
+
+    // if rendering to window, wait a small amount to allow final pixels to get drawn onto screen
+    if (RENDER_DONE != nullptr && KILL != nullptr)  // make sure function is not being called from render_to_file() (in which case, never add delay)
+        if (*KILL != true)  // We only want to add delay after scene has finished rendering; if it has not (window close command issued), do not add delay
+            std::this_thread::sleep_for(60ms);
+
+    if(RENDER_DONE != nullptr) *RENDER_DONE = true;
 }
 
 /* Renders image into a file (multithreaded) */
@@ -121,79 +136,80 @@ void renderer::render_to_file(const std::string filename) const {
     PPM << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
     // Allocate new image
-    image output(image_width, image_height);
+    std::vector<Uint32> pixels(image_width*image_height, 0);
 
     // Render into memory
     auto start_time = Time::now();
-    mt_render_to_mem(output);
+    mt_render_to_mem(pixels, nullptr, nullptr);
     print_render_time(Time::now() - start_time, std::cout, 3);
 
     // Write pixel values from memory into file
     for (int i = 0; i < image_width*image_height; ++i)
-        write_color(PPM, output[i]);
+        write_ARGB8888_PPM(PPM, pixels[i]);
 
     // Close output file stream
     PPM.close();
-
-    // image will automatically get deallocated. It is declared on stack, and destructor will thus automatically be called.
 }
 
 /* Renders scene and shows it in a program window */
 void renderer::render_to_window() const {
 
     // Create window and renderer
+    SDL_Init( SDL_INIT_EVERYTHING );
     SDL_Window* window = SDL_CreateWindow( "Raytracing in One Weekend++", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, image_width, image_height, SDL_WINDOW_SHOWN);
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    SDL_Renderer* sdl_renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+    SDL_SetHint( SDL_HINT_RENDER_SCALE_QUALITY, "1" );  // use linear filtering for scaling
 
-    SDL_Texture* buffer = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, image_width, image_height);
+    // Create texture and allocate space in memory for image
+    SDL_Texture* texture = SDL_CreateTexture(sdl_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, image_width, image_height);
+    std::vector<Uint32> pixels(image_width*image_height, 0);
 
-    Uint32* pixels = NULL;  // An elaborate setup (that I don't understand) with the (void**) below that gives us access to the pixels array only during the texture being locked
-    int pitch = 4*image_width;
-    // Lock texture so that we can edit the raw pixels array
-    SDL_LockTexture(buffer, NULL, (void**) &pixels, &pitch);
-
-    // Render scene to memory
-    image output(image_width, image_height);
+    // Launch scene render on a separate thread
+    bool RENDER_DONE = false;
+    bool KILL = false;
     auto start_time = Time::now();
-    mt_render_to_mem(output);
-    print_render_time(Time::now() - start_time, std::cout, 3);
+    std::thread headless_render(&renderer::mt_render_to_mem, this, std::ref(pixels), &RENDER_DONE, &KILL);
 
-    // Edit pixels array of texture
-    for (int j = 0; j < image_height*image_width; ++j)
-      pixels[j] = convert_to_ARGB8888(output[j]);
+    // Main SDL window loop
+    bool running = true;
+    bool timer_done = false;
+    while (running) {
+        if (RENDER_DONE && !timer_done) {
+            print_render_time(Time::now() - start_time, std::cout, 3);
+            timer_done = true;
+        }
 
-    // Unlock texture as we're now done editing the pixels
-    SDL_UnlockTexture(buffer);
+        // SDL event handling
+        SDL_Event e;
+        while(SDL_PollEvent(&e)) { // return 1 if there is a pending event, otherwise 0 (loop doesn't run)
+            if (e.type == SDL_QUIT) {
+                if (RENDER_DONE == false) KILL = true;  // send kill command to threads only if render is still in progress
+                running = false;
+                break;
+            }
+        }
 
-    // Copy texture to renderer
-    SDL_RenderCopy(renderer, buffer, NULL, NULL);
+        if (RENDER_DONE == false) {  // Only continue copying image from memory into texture if render is in progress
+            // Copy pixels from memory into the SDL texture
+            Uint32* locked_pixels = nullptr;
+            int pitch = image_width*4;
+            SDL_LockTexture( texture, nullptr, reinterpret_cast< void** >( &locked_pixels ), &pitch );
+            std::copy_n(pixels.data(), pixels.size(), locked_pixels);
+            SDL_UnlockTexture(texture);
 
-    // Refresh renderer
-    SDL_RenderPresent(renderer);
-
-    // Rendering is done, thus, deallocate texture & renderer
-    SDL_DestroyTexture(buffer);
-    SDL_DestroyRenderer(renderer);
-
-    //Hack to get window to stay up
-    SDL_Event e;
-    bool quit = false;
-    while(quit == false)
-    {
-      while(SDL_PollEvent( &e ))
-      {
-          if(e.type == SDL_QUIT)
-              quit = true;
-      }
+            // Copy texture to renderer
+            SDL_RenderCopy(sdl_renderer, texture, nullptr, nullptr);
+            // Update screen
+            SDL_RenderPresent(sdl_renderer);
+        }
     }
 
-    // Deallocate window
+    headless_render.join();
+
+    SDL_DestroyTexture(texture);
+    SDL_DestroyRenderer(sdl_renderer);
     SDL_DestroyWindow(window);
-
-    // Qut all SDL subsystems
     SDL_Quit();
-
-    // image in memory will automatically get deallocated as it is declared on stack and thus destructor will automatically get called
 }
 
 /* Renders frames of video where focus smoothly shifts from given startpoint to endpoint throughout the video */

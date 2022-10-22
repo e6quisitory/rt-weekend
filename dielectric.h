@@ -1,6 +1,7 @@
 #ifndef DIELECTRIC_H
 #define DIELECTRIC_H
 
+#include <memory>
 #include "material.h"
 #include "vec3.h"
 #include "ray.h"

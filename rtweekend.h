@@ -31,6 +31,7 @@ inline double random_double(double min, double max) {
 typedef std::chrono::high_resolution_clock Time;
 typedef std::chrono::duration<float>       duration;
 typedef std::chrono::minutes               mins;
+typedef std::chrono::time_point<std::chrono::steady_clock, std::chrono::duration<float>> time_val;
 
 void print_render_time(duration render_time_duration, std::ostream& out, int desired_precision) {
     mins  render_time_mins       = std::chrono::duration_cast<mins>(render_time_duration);
