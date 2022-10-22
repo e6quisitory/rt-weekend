@@ -6,11 +6,13 @@ Currently I have gone through Shirley's guide and implemented all the functional
   - Multithreading support to speed up render times on CPU
   - Video frames rendering (movable camera that can pan, spin, etc. as well as shift focus)
   - Render time measurement
-  - Render is shown in a desktop window rather than just written into a file
+  - Rendering can be shown happening **_live_** in a desktop window, rather than just a headless render into a file (although that is supported too)
 
-Here is a video to show off the raytracer and the video rendering capability that I added:
+Here's a demo of the video frames rendering and live rendering:
 
-![ezgif com-gif-maker (2)](https://user-images.githubusercontent.com/25702188/186802270-2f00752b-c3bf-47c2-a048-f107ec34be76.gif)
+Video Frames Rendering            |  Live Rendering
+:-------------------------:|:-------------------------:
+<img src="https://user-images.githubusercontent.com/25702188/186802270-2f00752b-c3bf-47c2-a048-f107ec34be76.gif" width="380" />  |  <img src="https://user-images.githubusercontent.com/25702188/197325026-4e6093b0-48e9-4aa0-9a2b-6b7ef8e75603.gif" width="380"/>
 
 The comments in the commits are quite rich with explanations of concepts, bugs and how I fixed them, more renders, etc. Feel free to have a look.
 
@@ -33,11 +35,11 @@ And running like so:
 ## Output
 Single image renders should produce a `.ppm` file in the same directory as the executable.
 
-You can also use the `render_to_window()` function in the renderer class to display the rendered image in a desktop window.
+You can also use the `render_to_window()` function in the renderer class to see the image get rendered live into a desktop window.
 
-For rendering videos, make a subfolder called `output`, and the video frames will be rendered into there. To combine the video frames into a video, `cd` into the `output` folder and run the following ffmpeg command:
+For rendering videos, make a subfolder called `output`, and the video frames will be rendered into there. To combine the video frames into a video, run the following ffmpeg command:
 ```
-ffmpeg -framerate 30 -i "%01d.ppm" output.mp4
+ffmpeg -framerate 30 -i "output/%01d.ppm" output.mp4
 ```
 I've used 30 fps in the code, and thus the number must be the same in this command.
 
