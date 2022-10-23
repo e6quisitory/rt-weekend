@@ -5,8 +5,8 @@ This repository contains a raytracer built by following Peter Shirley's [Raytrac
 Currently I have gone through Shirley's guide and implemented all the functionality within it. I have since then added some extra features (hence the ++ 😁) and continue to add more. The features I've added thus far are the following:
   - Multithreading support to speed up render times on CPU
   - Video frames rendering (movable camera that can pan, spin, etc. as well as shift focus)
-  - Render time measurement
-  - Rendering can be shown happening **_live_** in a desktop window, rather than just a headless render into a file (although that is supported too)
+  - Render time measurement & percentage progress indicator
+  - **_Live_** rendering into a desktop window, rather than just a headless render into a file (although that is supported too)
 
 Here's a demo of the video frames rendering and live rendering:
 
