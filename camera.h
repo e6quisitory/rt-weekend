@@ -35,6 +35,7 @@ class camera {
     point3 lookat;
     vec3 y;
     point3 lower_left_corner;
+    point3 top_left_corner;
     double focus_dist;
     vec3 view_dir;
 
@@ -101,6 +102,7 @@ void camera::set_imageplane_vecs() {
   horizontal = x * viewport_width;
   vertical = y * viewport_height;
   lower_left_corner = origin + focus_dist * view_dir - horizontal/2 - vertical/2; // The image plane is *at* the focus plane
+  top_left_corner = lower_left_corner + vertical;
 }
 
 vec3 camera::random_in_unit_disk() const {
@@ -113,7 +115,7 @@ vec3 camera::random_in_unit_disk() const {
 /* u, v are real numbers b/w 0 and 1. Width and height of the viewport represented as a percentage. */
 ray camera::get_ray(double u, double v) const {
   vec3 rd = origin + lens_radius*random_in_unit_disk();
-  return ray(rd, (lower_left_corner + u*horizontal + v*vertical) - rd);
+  return ray(rd, (top_left_corner + u*horizontal - v*vertical) - rd);
 }
 
 #endif

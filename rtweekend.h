@@ -6,12 +6,10 @@
 #include <limits>
 
 // Constants
-
 const double infinity = std::numeric_limits<double>::infinity();
 const double pi = 3.1415926535897932385;
 
 // Utility Functions
-
 inline double degrees_to_radians(double degrees) {
     return degrees * pi / 180.0;
 }
@@ -27,7 +25,6 @@ inline double random_double(double min, double max) {
 }
 
 // Timer stuff
-
 typedef std::chrono::high_resolution_clock Time;
 typedef std::chrono::duration<float>       duration;
 typedef std::chrono::minutes               mins;
@@ -41,7 +38,7 @@ void print_render_time(duration render_time_duration, std::ostream& out, int des
 
     int prev_precision = out.precision();
     out.precision(desired_precision);
-    out << "\nRender time: " << render_time_secs_float << "s, " << render_time_mins_secs << " mins"<<std::endl;
+    out << "\nRender complete.\nRender time: " << render_time_secs_float << "s, " << render_time_mins_secs << " mins"<<std::endl;
     out.precision(prev_precision);
 }
 

@@ -2,11 +2,10 @@
 #include "matte.h"
 #include "metal.h"
 #include "sphere.h"
-#include <SDL2/SDL.h>
-
-using namespace std;
 
 int main() {
+
+    using namespace std;
 
     /* Initialize renderer */
     renderer r;
@@ -61,7 +60,8 @@ int main() {
 //  r.render_to_file("mt_test.ppm");
 //  r.render_to_file_st("st_test.ppm");
 
-    // The output frames can be combined into an mp4 with the follwoing command: ffmpeg -framerate 30 -i "output/%01d.ppm" output.mp4
+// The output frames can be combined into an mp4 with the follwoing command: ffmpeg -framerate 30 -i "output/%01d.ppm" output.mp4
+
 
     r.render_to_window();
     r.render_to_file("scene.ppm");

@@ -18,6 +18,7 @@
 #include "material.h"
 #include "hittable_list.h"
 #include "rtweekend.h"
+#include "image.h"
 
 using namespace std::chrono_literals;
 
@@ -39,7 +40,6 @@ class renderer {
   public:
     typedef std::atomic<bool> a_bool;
     typedef std::atomic<int> a_int;
-    typedef std::vector<Uint32> ARGB_arr;
 
     renderer() {
       frame_count = 0;
@@ -53,8 +53,8 @@ class renderer {
 
   private:
     pixel ray_color(const ray& r, int depth) const;
-    void st_render_to_mem(ARGB_arr& pixels, a_int& scanlines, a_bool* KILL) const;
-    void mt_render_to_mem(ARGB_arr& pixels, a_bool* RENDER_DONE, a_bool* KILL) const;
+    void st_render_to_mem(image* const pixels, a_int& scanlines, a_bool* KILL) const;
+    void mt_render_to_mem(image* const pixels, a_bool* RENDER_DONE, a_bool* KILL) const;
     int frame_count;
 
   public:  // perhaps make a bunch of these private and set them in the constructor
@@ -83,7 +83,7 @@ pixel renderer::ray_color(const ray& r, int depth) const {
 }
 
 /* Single-threaded render to memory location passed in. Adds final pixel divided by core count to each output pixel. */
-void renderer::st_render_to_mem(ARGB_arr& pixels, a_int& scanlines, a_bool* KILL) const {
+void renderer::st_render_to_mem(image* const pixels, a_int& scanlines, a_bool* KILL) const {
 
     // Split the render across all cores
     int divided_spp = samples_per_pixel/core_count;
@@ -100,7 +100,7 @@ void renderer::st_render_to_mem(ARGB_arr& pixels, a_int& scanlines, a_bool* KILL
             }
             pixel final = sqrt(sum/divided_spp);   // sqrt for gamma correction
             pixel partial_avg = final / core_count;
-            pixels[((image_height-i)*image_width)+j] += convert_to_ARGB8888(partial_avg);
+            (*pixels)(j,i) += convert_to_ARGB8888(partial_avg);
         }
         ++scanlines;
     }
@@ -108,36 +108,36 @@ void renderer::st_render_to_mem(ARGB_arr& pixels, a_int& scanlines, a_bool* KILL
 }
 
 /* Multi-threaded render to memory location passed in */
-void renderer::mt_render_to_mem(ARGB_arr& pixels, a_bool* RENDER_DONE, a_bool* KILL) const {
+void renderer::mt_render_to_mem(image* const pixels, a_bool* RENDER_DONE, a_bool* KILL) const {
 
     // create an array of threads
     std::thread threads[core_count];
 
-    // counter for st render threads completion
-    int render_completion_count = 0;
-
-    a_int scanlines = 0;  // stores (# of scanlines completed * core_count); thus, divide by core_count to get # of scanlines done rendering
+    // stores (# of scanlines completed * core_count); thus, divide by core_count to get # of scanlines done rendering
+    a_int scanlines = 0;
 
     // launch as many threads as CPU cores, rendering one image on each thread
     for (int i = 0; i < core_count; ++i)
-        threads[i] = std::thread(&renderer::st_render_to_mem, this, std::ref(pixels), std::ref(scanlines), KILL);
+        threads[i] = std::thread(&renderer::st_render_to_mem, this, pixels, std::ref(scanlines), KILL);
 
     // Print out rendering progress as a percentage
     while((scanlines/core_count) != image_height) {
         if (KILL != nullptr) if (*KILL) break; // Stop printing progress if KILL command has been issued
-        std::cout << "\rProgress: " << round(((scanlines/core_count) / (double) image_height)*100.0) << "%" << std::flush;
+        std::cout << "\rProgress: " << std::ceil(((scanlines/core_count) / (double) image_height)*100.0) << "%" << std::flush;
     }
 
     // Wait for all threads to finish their renders
     for (int i = 0; i < core_count; ++i)
         threads[i].join();
 
-    // if rendering to window, wait a small amount to allow final pixels to get drawn onto screen
-    if (RENDER_DONE != nullptr && KILL != nullptr)  // make sure function is not being called from render_to_file() (in which case, never add delay)
-        if (*KILL != true)  // We only want to add delay after scene has finished rendering; if it has not (window close command issued), do not add delay
-            std::this_thread::sleep_for(60ms);
 
-    if(RENDER_DONE != nullptr) *RENDER_DONE = true;
+    if (RENDER_DONE != nullptr && KILL != nullptr) {
+        if (*KILL != true) { // We only want to add delay after scene has finished rendering; if it has not (window close command issued), do not add delay
+            std::this_thread::sleep_for(80ms); // wit a small amount to allow final pixels to get drawn onto screen
+            *RENDER_DONE = true;
+        } else
+            std::cout << "Render aborted. Exiting." << std::endl;
+    }
 }
 
 /* Renders image into a file (multithreaded) */
@@ -153,7 +153,7 @@ void renderer::render_to_file(const std::string filename) const {
     PPM << "P3\n" << image_width << ' ' << image_height << "\n255\n";
 
     // Allocate new image
-    ARGB_arr pixels(image_width*image_height, 0);
+    image* pixels = new image(image_width, image_height);
 
     // Render into memory
     auto start_time = Time::now();
@@ -162,12 +162,14 @@ void renderer::render_to_file(const std::string filename) const {
 
     // Write pixel values from memory into file
     for (int i = 0; i < image_width*image_height; ++i)
-        write_ARGB8888_PPM(PPM, pixels[i]);
+        write_ARGB8888_PPM(PPM, (*pixels)[i]);
 
     // Close output file stream
     PPM.close();
 
     std::cout << std::endl;  // make space for next render info on screen
+
+    delete pixels;
 }
 
 /* Renders scene and shows it in a program window */
@@ -185,13 +187,13 @@ void renderer::render_to_window() const {
 
     // Create texture and allocate space in memory for image
     SDL_Texture* texture = SDL_CreateTexture(sdl_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, image_width, image_height);
-    ARGB_arr pixels(image_width*image_height, 0);
+    image* pixels = new image(image_width, image_height);  
 
     // Launch scene render on a separate thread
     a_bool RENDER_DONE = false;  // flag for stopping rendering pixels from memory to screen once render is finished
     a_bool KILL = false;  // flag for making the rendering threads stop and return; needed for when user closes the rendering window while render is still in progress
     auto start_time = Time::now();
-    std::thread headless_render(&renderer::mt_render_to_mem, this, std::ref(pixels), &RENDER_DONE, &KILL);
+    std::thread headless_render(&renderer::mt_render_to_mem, this, pixels, &RENDER_DONE, &KILL);
 
     // Main SDL window loop
     bool running = true;
@@ -216,12 +218,15 @@ void renderer::render_to_window() const {
             }
         }
 
-        if (RENDER_DONE == false) {  // Only continue copying image from memory into texture if render is in progress
+        if (RENDER_DONE == false && running == true) {  // Only continue copying image from memory into texture if render is in progress
             // Copy pixels from memory into the SDL texture
             Uint32* locked_pixels = nullptr;
             int pitch = image_width*4;
-            SDL_LockTexture( texture, nullptr, reinterpret_cast< void** >( &locked_pixels ), &pitch );
-            std::copy_n(pixels.data(), pixels.size(), locked_pixels);
+            SDL_LockTexture( texture, nullptr, reinterpret_cast<void**>(&locked_pixels), &pitch );
+
+            for (int i = 0; i < image_width*image_height; ++i)
+                locked_pixels[i] = (*pixels)[i];
+
             SDL_UnlockTexture(texture);
 
             // Copy texture to renderer
@@ -240,6 +245,8 @@ void renderer::render_to_window() const {
     SDL_Quit();
 
     std::cout << std::endl;  // make space for next render info on screen
+
+    delete pixels;
 }
 
 /* Renders frames of video where focus smoothly shifts from given startpoint to endpoint throughout the video */
