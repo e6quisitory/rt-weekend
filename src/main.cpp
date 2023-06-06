@@ -1,11 +1,11 @@
-#include "renderer.h"
-#include "matte.h"
-#include "metal.h"
-#include "sphere.h"
+#include "renderer/renderer.h"
+#include "material/matte/matte.h"
+#include "material/metal/metal.h"
+#include "hittable/sphere/sphere.h"
+
+using namespace std;
 
 int main() {
-
-    using namespace std;
 
     /* Initialize renderer */
     renderer r;
@@ -41,30 +41,38 @@ int main() {
     r.image_width = 1280;
     r.image_height = r.image_width / r.cam.aspect_ratio; // image & viewport have same aspect ratio
 
-//  /* Render */
-//  r.render_straight_line(point3(0,0,1), video_params(1, 30));
-//
-//  spinning_circle_params scp = {
-//    x_hat(),
-//    -z_hat(),
-//    point3(0,0,-1),
-//    2*pi + 2.8*((2*pi/4)/4),
-//    video_params(1, 30)
-//  };
-//
-//  r.render_spinning_circle(scp);
-//  r.render_straight_line(ray(r.cam.origin, point3(0,0,-1) - r.cam.origin).at(0.27), video_params(1, 30));
-//
-//  r.render_shifting_focus(r.cam.focus_dist*r.cam.view_dir, point3(l,0,-1), video_params(3, 30));
-//
-//  r.render_to_file("mt_test.ppm");
-//  r.render_to_file_st("st_test.ppm");
+    /* Render */
 
-// The output frames can be combined into an mp4 with the follwoing command: ffmpeg -framerate 30 -i "output/%01d.ppm" output.mp4
+    /* For rendering video frames, try the code below (commented out currently) */
 
+      /*
+      r.render_straight_line(point3(0,0,1), video_params(1, 30));
 
+      spinning_circle_params scp = {
+        x_hat(),
+        -z_hat(),
+        point3(0,0,-1),
+        2*pi + 2.8*((2*pi/4)/4),
+        video_params(1, 30)
+      };
+
+      r.render_spinning_circle(scp);
+      r.render_straight_line(ray(r.cam.origin, point3(0,0,-1) - r.cam.origin).at(0.27), video_params(1, 30));
+
+      r.render_shifting_focus(r.cam.focus_dist*r.cam.view_dir, point3(l,0,-1), video_params(3, 30));
+
+      r.render_to_file("mt_test.ppm");
+
+      // The output frames can be combined into an mp4 with the follwoing command: ffmpeg -framerate 30 -i "output/%01d.ppm" output.mp4
+      */
+
+    /* Render live to a window */
     r.render_to_window();
-    r.render_to_file("scene.ppm");
+
+    /* Render into a file */
+        /*
+        r.render_to_file("scene.ppm");
+        */
 
     return 0;
 }

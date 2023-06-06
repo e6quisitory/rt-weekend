@@ -1,8 +1,4 @@
-#ifndef MATERIAL_H
-#define MATERIAL_H
-
-#include "ray.h"
-#include "vec3.h"
+#pragma once
 
 struct hit_record;
 
@@ -15,5 +11,3 @@ class material {
   public:
     color albedo;
 };
-
-#endif

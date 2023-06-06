@@ -1,22 +1,8 @@
-#ifndef SPHERE_H
-#define SPHERE_H
+#include "sphere.h"
 
-#include "rtweekend.h"
-#include <memory>
-#include "material.h"
+sphere::sphere() {}
 
-class sphere : public hittable {
-  public:
-    sphere() {}
-    sphere(point3 c, double r, material::ptr m): center(c), radius(r), material_ptr(m) {}
-
-    virtual bool hit(const ray& r, double t_min, double t_max, hit_record& rec) const override;
-
-  public:
-    point3 center;
-    double radius;
-    material::ptr material_ptr;
-};
+sphere::sphere(point3 c, double r, material::ptr m): center(c), radius(r), material_ptr(m) {}
 
 bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) const {
   vec3 ray_direction = r.direction();
@@ -44,5 +30,3 @@ bool sphere::hit(const ray& r, double t_min, double t_max, hit_record& rec) cons
 
   return true;
 }
-
-#endif
