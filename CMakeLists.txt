@@ -7,12 +7,12 @@ set (CMAKE_CXX_STANDARD 17)
 find_package(SDL2 REQUIRED COMPONENTS SDL2)
 
 # Add .cpp files into executable
-file (GLOB_RECURSE SRC_FILES "${CMAKE_SOURCE_DIR}/*.cpp")
+file (GLOB_RECURSE SRC_FILES "${CMAKE_SOURCE_DIR}/src/*.cpp")
 
 add_executable (rt-weekend ${SRC_FILES})
 
 # Create pre-compiled header
-file (GLOB_RECURSE UTIL_HEADERS "${CMAKE_SOURCE_DIR}/utilities/*.h")
+file (GLOB_RECURSE UTIL_HEADERS "${CMAKE_SOURCE_DIR}/src/utilities/*.h")
 target_precompile_headers (rt-weekend PRIVATE ${UTIL_HEADERS})
 
 # Link SDL2

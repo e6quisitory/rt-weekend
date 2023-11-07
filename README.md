@@ -19,7 +19,7 @@ Have [SDL2](https://github.com/libsdl-org/SDL/releases), `CMake` and `ninja` ins
 ```
 mkdir build
 cd build
-cmake -GNinja ../src
+cmake -G Ninja ..
 ninja
 ./rt-weekend
 ```

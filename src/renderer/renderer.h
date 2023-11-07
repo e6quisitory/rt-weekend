@@ -1,5 +1,8 @@
 #pragma once
 
+#include <thread>
+#include <atomic>
+
 #include "../camera/camera.h"
 #include "../hittable/hittable.h"
 #include "../material/material.h"
